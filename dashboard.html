@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<h2>Food Dashboard</h2>
+
+<div id="donorSection">
+  <h3>Post Food</h3>
+  <input id="food" placeholder="Food Type">
+  <input id="qty" placeholder="Quantity">
+  <input id="location" placeholder="Location">
+  <button onclick="postFood()">Post</button>
+</div>
+
+<hr>
+
+<h3>Available Food</h3>
+<div id="foodList"></div>
+
+<script type="module">
+
+import { auth, db } from "./firebase.js";
+
+import {
+  collection,
+  addDoc,
+  getDocs,
+  doc,
+  updateDoc
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+window.postFood = async () => {
+  const food = document.getElementById("food").value;
+  const qty = document.getElementById("qty").value;
+  const loc = document.getElementById("location").value;
+
+  await addDoc(collection(db, "food"), {
+    food,
+    qty,
+    loc,
+    status: "available"
+  });
+
+  alert("Posted!");
+  loadFood();
+};
+
+async function loadFood() {
+  const data = await getDocs(collection(db, "food"));
+  let html = "";
+
+  data.forEach(docSnap => {
+    const d = docSnap.data();
+
+    html += `
+      <div>
+        <b>${d.food}</b> - ${d.qty} (${d.loc})
+        ${d.status === "available"
+          ? `<button onclick="claim('${docSnap.id}')">Claim</button>`
+          : "Claimed"}
+      </div>
+    `;
+  });
+
+  document.getElementById("foodList").innerHTML = html;
+}
+
+window.claim = async (id) => {
+  const ref = doc(db, "food", id);
+  await updateDoc(ref, { status: "claimed" });
+
+  alert("Claimed!");
+  loadFood();
+};
+
+loadFood();
+
+</script>
+</body>
+</html>
