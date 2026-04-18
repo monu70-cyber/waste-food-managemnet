@@ -35,12 +35,13 @@ import { getAuth } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth
 import { getFirestore } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_AUTH_DOMAIN",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_STORAGE_BUCKET",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID"
+  apiKey: "AIzaSyDt3TIAyxKRCe3qqaBXCxTtei7MNs_WNn4",
+  authDomain: "food-management-37781.firebaseapp.com",
+  projectId: "food-management-37781",
+  storageBucket: "food-management-37781.firebasestorage.app",
+  messagingSenderId: "714758924336",
+  appId: "1:714758924336:web:3852121d964d5145cd65f5",
+  measurementId: "G-LXDX5DGCMY"
 };
 
 // Initialize Firebase
