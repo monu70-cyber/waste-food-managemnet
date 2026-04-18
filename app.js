@@ -1,37 +1,56 @@
-import { auth, db } from "./firebase.js";
+import { auth, db } from './firebase.js';
+import { createUserWithEmailAndPassword, signInWithEmailAndPassword } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+import { doc, setDoc } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
-import {
-  createUserWithEmailAndPassword,
-  signInWithEmailAndPassword
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+let isLogin = true;
 
-import {
-  collection,
-  addDoc,
-  getDocs,
-  doc,
-  updateDoc
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+// Forcefully hide fields on load
+document.getElementById('name-group').style.display = 'none';
+document.getElementById('role-group').style.display = 'none';
 
-window.signup = async () => {
-  const email = document.getElementById("email").value;
-  const pass = document.getElementById("password").value;
-  const role = document.getElementById("role").value;
+// Make the ENTIRE line clickable
+document.getElementById('toggle-msg').addEventListener('click', () => {
+    isLogin = !isLogin; 
+    
+    document.getElementById('auth-title').innerText = isLogin ? 'Login to FoodShare' : 'Sign Up for FoodShare';
+    document.getElementById('auth-btn').innerText = isLogin ? 'Login' : 'Sign Up';
+    
+    if (isLogin) {
+        document.getElementById('name-group').style.display = 'none';
+        document.getElementById('role-group').style.display = 'none';
+    } else {
+        document.getElementById('name-group').style.display = 'block';
+        document.getElementById('role-group').style.display = 'block';
+    }
 
-  const user = await createUserWithEmailAndPassword(auth, email, pass);
+    document.getElementById('toggle-msg').innerHTML = isLogin ? 
+        `Don't have an account? <span id="toggle-auth" style="color: #2ecc71; text-decoration: underline; font-weight: bold;">Sign Up</span>` : 
+        `Already have an account? <span id="toggle-auth" style="color: #2ecc71; text-decoration: underline; font-weight: bold;">Login</span>`;
+});
 
-  await addDoc(collection(db, "users"), {
-    uid: user.user.uid,
-    role: role
-  });
+// Authentication Submit Logic
+document.getElementById('auth-form').onsubmit = async (e) => {
+    e.preventDefault();
+    const email = document.getElementById('email').value;
+    const password = document.getElementById('password').value;
 
-  alert("Signup Successful");
-};
-
-window.login = async () => {
-  const email = document.getElementById("email").value;
-  const pass = document.getElementById("password").value;
-
-  await signInWithEmailAndPassword(auth, email, pass);
-  window.location = "dashboard.html";
+    try {
+        if (isLogin) {
+            await signInWithEmailAndPassword(auth, email, password);
+            window.location.href = 'dashboard.html';
+        } else {
+            const name = document.getElementById('user-name').value;
+            const role = document.getElementById('role').value;
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            
+            await setDoc(doc(db, "users", userCredential.user.uid), {
+                name: name,
+                role: role,
+                email: email
+            });
+            window.location.href = 'dashboard.html';
+        }
+    } catch (error) {
+        alert(error.message); 
+    }
 };
