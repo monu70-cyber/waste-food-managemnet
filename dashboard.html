@@ -1,132 +1,3 @@
-<!-- <!-- <!DOCTYPE html>
-<html>
-<head>
-  <title>Dashboard</title>
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
-
-<h2>Food Dashboard</h2>
-
-<div id="donorSection">
-  <h3>Post Food</h3>
-  <input id="food" placeholder="Food Type">
-  <input id="qty" placeholder="Quantity">
-  <input id="location" placeholder="Location">
-  <button onclick="postFood()">Post</button>
-</div>
-
-<hr>
-
-<h3>Available Food</h3>
-<div id="foodList"></div>
-
-<script type="module">
-
-import { auth, db } from "./firebase.js";
-
-import {
-  collection,
-  addDoc,
-  getDocs,
-  doc,
-  updateDoc
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-window.postFood = async () => {
-  const food = document.getElementById("food").value;
-  const qty = document.getElementById("qty").value;
-  const loc = document.getElementById("location").value;
-
-  await addDoc(collection(db, "food"), {
-    food,
-    qty,
-    loc,
-    status: "available"
-  });
-
-  alert("Posted!");
-  loadFood();
-};
-
-async function loadFood() {
-  const data = await getDocs(collection(db, "food"));
-  let html = "";
-
-  data.forEach(docSnap => {
-    const d = docSnap.data();
-
-    html += `
-      <div>
-        <b>${d.food}</b> - ${d.qty} (${d.loc})
-        ${d.status === "available"
-          ? `<button onclick="claim('${docSnap.id}')">Claim</button>`
-          : "Claimed"}
-      </div>
-    `;
-  });
-
-  document.getElementById("foodList").innerHTML = html;
-}
-
-window.claim = async (id) => {
-  const ref = doc(db, "food", id);
-  await updateDoc(ref, { status: "claimed" });
-
-  alert("Claimed!");
-  loadFood();
-};
-
-loadFood();
-
-</script>
-</body>
-</html> -->
-
-
-<!-- <!DOCTYPE html>
-<html>
-<head>
-  <title>Dashboard</title>
-  <link rel="stylesheet" href="style.css">
-</head>
-<body>
-
-<div class="dashboard">
-
-  <div class="sidebar">
-    <h3>FoodShare</h3>
-    <p id="userRole"></p>
-  </div>
-
-  <div class="main">
-
-    <h2>Dashboard</h2>
-
-    <div id="donorSection">
-      <h3>Post Food</h3>
-      <input id="food" placeholder="Food">
-      <input id="qty" placeholder="Quantity">
-      <input id="loc" placeholder="Location">
-      <button id="postBtn">Post</button>
-    </div>
-
-    <h3>Available Food</h3>
-    <div id="list"></div>
-
-  </div>
-
-</div>
-
-<script type="module" src="dashboard.js"></script>
-</body>
-</html> --> -->
-
-
-
-
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -134,49 +5,58 @@ loadFood();
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Dashboard - FoodShare</title>
     <link rel="stylesheet" href="style.css">
-    <style>
-        .nav { display: flex; justify-content: space-between; align-items: center; padding: 1rem 5%; background: var(--dark); color: white; }
-        .container { padding: 2rem 5%; }
-        .card { background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 1rem; border-left: 5px solid var(--primary); }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; }
-        .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; text-transform: uppercase; }
-        .badge-available { background: #d4edda; color: #155724; }
-        .badge-claimed { background: #fff3cd; color: #856404; }
-        .logout-btn { background: var(--danger); width: auto; padding: 8px 15px; }
-    </style>
 </head>
 <body>
-    <nav class="nav">
-        <h2 style="margin:0; color: white;">FoodShare</h2>
-        <div>
-            <span id="user-display">Loading...</span>
-            <button id="logout-btn" class="logout-btn">Logout</button>
+    <header class="navbar">
+        <h2>FoodShare</h2>
+        <div class="nav-controls">
+            <span class="user-badge" id="user-display">Loading...</span>
+            <button id="logout-btn" class="btn-logout">Logout</button>
         </div>
-    </nav>
+    </header>
 
-    <div class="container">
+    <main class="dashboard-main">
+        
         <div id="donor-section" class="hidden">
-            <h3>Post New Donation</h3>
-            <div class="card">
+            <h3 class="section-header">Post a New Donation</h3>
+            <div class="post-donation-card">
                 <form id="donation-form">
-                    <div class="grid">
-                        <input type="text" id="food-type" placeholder="Food Item (e.g. Rice, Bread)" required>
-                        <input type="text" id="quantity" placeholder="Quantity (e.g. 5kg, 10 packets)" required>
-                        <input type="text" id="shelf-life" placeholder="Shelf Life (e.g. 4 hours, 1 day)" required>
-                        <input type="text" id="address" placeholder="Pickup Address" required>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Food Item</label>
+                            <input type="text" id="food-type" placeholder="e.g., 50 Servings of Rice & Curry" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Quantity</label>
+                            <input type="text" id="quantity" placeholder="e.g., 10 Kgs / 50 Packets" required>
+                        </div>
                     </div>
-                    <button type="submit" style="margin-top:1rem;">List Food Item</button>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Safe to consume for (Shelf Life)</label>
+                            <input type="text" id="shelf-life" placeholder="e.g., Next 4 hours" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Pickup Location</label>
+                            <input type="text" id="address" placeholder="Complete address for pickup" required>
+                        </div>
+                    </div>
+                    <button type="submit" style="margin-top: 0.5rem;">List Food Item</button>
                 </form>
             </div>
-            <h3>My Previous Donations</h3>
-            <div id="donor-history" class="grid"></div>
+
+            <h3 class="section-header">My Donation History</h3>
+            <div id="donor-history" class="dashboard-grid">
+                </div>
         </div>
 
         <div id="ngo-section" class="hidden">
-            <h3>Available Food in Your Area</h3>
-            <div id="available-feed" class="grid"></div>
+            <h3 class="section-header">Available Food in Your Area</h3>
+            <div id="available-feed" class="dashboard-grid">
+                </div>
         </div>
-    </div>
+
+    </main>
 
     <script type="module" src="dashboard.js"></script>
 </body>
