@@ -1,96 +1,21 @@
-// import { auth, db } from "./firebase.js";
-
-// import {
-//   collection,
-//   addDoc,
-//   onSnapshot,
-//   doc,
-//   updateDoc,
-//   getDoc
-// } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
-
-// import { onAuthStateChanged } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
-
-// const postBtn = document.getElementById("postBtn");
-// const list = document.getElementById("list");
-
-// let userRole = "";
-
-// onAuthStateChanged(auth, async (user) => {
-//   if (!user) return (window.location = "index.html");
-
-//   const userDoc = await getDoc(doc(db, "users", user.uid));
-//   userRole = userDoc.data().role;
-
-//   document.getElementById("userRole").innerText = userRole;
-
-//   if (userRole === "ngo") {
-//     document.getElementById("donorSection").style.display = "none";
-//   }
-
-//   loadFood();
-// });
-
-// postBtn.addEventListener("click", async () => {
-//   await addDoc(collection(db, "food"), {
-//     food: food.value,
-//     qty: qty.value,
-//     loc: loc.value,
-//     status: "available"
-//   });
-// });
-
-// function loadFood() {
-//   onSnapshot(collection(db, "food"), (snapshot) => {
-//     list.innerHTML = "";
-
-//     snapshot.forEach(docSnap => {
-//       const d = docSnap.data();
-
-//       const div = document.createElement("div");
-//       div.className = "card";
-
-//       div.innerHTML = `
-//         <b>${d.food}</b> - ${d.qty} (${d.loc}) <br>
-//         Status: ${d.status}
-//       `;
-
-//       if (userRole === "ngo" && d.status === "available") {
-//         const btn = document.createElement("button");
-//         btn.innerText = "Claim";
-
-//         btn.onclick = async () => {
-//           await updateDoc(doc(db, "food", docSnap.id), {
-//             status: "claimed"
-//           });
-//         };
-
-//         div.appendChild(btn);
-//       }
-
-//       list.appendChild(div);
-//     });
-//   });
-// }
-
-
-
-
 import { auth, db } from './firebase.js';
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { 
-    collection, addDoc, query, where, onSnapshot, doc, getDoc, updateDoc, serverTimestamp 
+    collection, addDoc, query, where, onSnapshot, doc, getDoc, updateDoc, serverTimestamp, orderBy 
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 
 const donorSection = document.getElementById('donor-section');
 const ngoSection = document.getElementById('ngo-section');
 const userDisplay = document.getElementById('user-display');
 
+// Check User Auth State
 onAuthStateChanged(auth, async (user) => {
     if (user) {
         const userDoc = await getDoc(doc(db, "users", user.uid));
         const userData = userDoc.data();
-        userDisplay.innerText = `${userData.name} (${userData.role})`;
+        
+        // Format the badge: "Organization Name • Role"
+        userDisplay.innerText = `${userData.name} • ${userData.role.toUpperCase()}`;
 
         if (userData.role === 'donor') {
             donorSection.classList.remove('hidden');
@@ -104,7 +29,7 @@ onAuthStateChanged(auth, async (user) => {
     }
 });
 
-// Donor: Submit Donation 
+// Donor: Submit Donation
 document.getElementById('donation-form').onsubmit = async (e) => {
     e.preventDefault();
     const foodData = {
@@ -113,65 +38,82 @@ document.getElementById('donation-form').onsubmit = async (e) => {
         shelfLife: document.getElementById('shelf-life').value,
         address: document.getElementById('address').value,
         donorId: auth.currentUser.uid,
-        donorName: userDisplay.innerText.split(' (')[0],
+        donorName: userDisplay.innerText.split(' •')[0],
         status: 'available',
         createdAt: serverTimestamp()
     };
 
     try {
         await addDoc(collection(db, "donations"), foodData);
-        alert("Food listed successfully!");
-        e.target.reset();
-    } catch (error) { alert(error.message); }
+        e.target.reset(); // Clear form on success
+    } catch (error) { 
+        alert("Error posting donation: " + error.message); 
+    }
 };
 
-// NGO: Load Available Food [cite: 23]
+// NGO: Load Available Food Feed
 function loadAvailableFood() {
     const q = query(collection(db, "donations"), where("status", "==", "available"));
     onSnapshot(q, (snapshot) => {
         const feed = document.getElementById('available-feed');
         feed.innerHTML = '';
+        
+        if(snapshot.empty) {
+            feed.innerHTML = `<p style="color: var(--text-muted); grid-column: 1/-1;">No donations available at the moment. Please check back later.</p>`;
+            return;
+        }
+
         snapshot.forEach((docSnap) => {
             const item = docSnap.data();
             feed.innerHTML += `
-                <div class="card">
-                    <span class="badge badge-available">Available</span>
-                    <h4>${item.foodType}</h4>
-                    <p><b>Qty:</b> ${item.quantity} | <b>Expires in:</b> ${item.shelfLife}</p>
-                    <p><b>Pickup:</b> ${item.address}</p>
-                    <p><small>By: ${item.donorName}</small></p>
-                    <button onclick="claimFood('${docSnap.id}')">Claim for Pickup</button>
+                <div class="data-card">
+                    <span class="status-badge badge-available">Available</span>
+                    <h4 class="card-title">${item.foodType}</h4>
+                    <div class="card-detail"><strong>Quantity:</strong> <span>${item.quantity}</span></div>
+                    <div class="card-detail"><strong>Expires:</strong> <span>${item.shelfLife}</span></div>
+                    <div class="card-detail"><strong>Location:</strong> <span>${item.address}</span></div>
+                    <div class="card-detail" style="margin-bottom: 0.5rem;"><strong>Donor:</strong> <span>${item.donorName}</span></div>
+                    <button onclick="claimFood('${docSnap.id}')" style="margin-top: auto;">Claim for Pickup</button>
                 </div>`;
         });
     });
 }
 
-// NGO: Claiming System [cite: 24, 25]
+// NGO: Claiming System
 window.claimFood = async (id) => {
-    const donationRef = doc(db, "donations", id);
-    await updateDoc(donationRef, {
-        status: 'claimed',
-        claimedBy: auth.currentUser.uid,
-        claimedByName: userDisplay.innerText.split(' (')[0]
-    });
-    alert("Food claimed! Please coordinate with the donor for pickup.");
+    if(confirm("Are you sure you want to claim this food? You must coordinate pickup immediately.")) {
+        const donationRef = doc(db, "donations", id);
+        await updateDoc(donationRef, {
+            status: 'claimed',
+            claimedBy: auth.currentUser.uid,
+            claimedByName: userDisplay.innerText.split(' •')[0]
+        });
+    }
 };
 
-// Donor: View History [cite: 21]
+// Donor: View History
 function loadDonorHistory(uid) {
     const q = query(collection(db, "donations"), where("donorId", "==", uid));
     onSnapshot(q, (snapshot) => {
         const history = document.getElementById('donor-history');
         history.innerHTML = '';
+
+        if(snapshot.empty) {
+            history.innerHTML = `<p style="color: var(--text-muted); grid-column: 1/-1;">You haven't posted any donations yet.</p>`;
+            return;
+        }
+
         snapshot.forEach((docSnap) => {
             const item = docSnap.data();
-            const statusClass = item.status === 'available' ? 'badge-available' : 'badge-claimed';
+            const isAvailable = item.status === 'available';
+            
             history.innerHTML += `
-                <div class="card">
-                    <span class="badge ${statusClass}">${item.status}</span>
-                    <h4>${item.foodType}</h4>
-                    <p>${item.quantity} - ${item.address}</p>
-                    ${item.status === 'claimed' ? `<p><small>Claimed by: ${item.claimedByName}</small></p>` : ''}
+                <div class="data-card">
+                    <span class="status-badge ${isAvailable ? 'badge-available' : 'badge-claimed'}">${item.status}</span>
+                    <h4 class="card-title">${item.foodType}</h4>
+                    <div class="card-detail"><strong>Quantity:</strong> <span>${item.quantity}</span></div>
+                    <div class="card-detail"><strong>Location:</strong> <span>${item.address}</span></div>
+                    ${!isAvailable ? `<div class="card-detail" style="margin-top: 0.5rem; color: var(--primary-dark);"><strong>Claimed By:</strong> <span>${item.claimedByName}</span></div>` : ''}
                 </div>`;
         });
     });
