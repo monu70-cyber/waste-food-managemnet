@@ -1,4 +1,4 @@
-body {
+/* body {
   font-family: Arial;
   background: #f4f4f4;
 }
@@ -24,4 +24,74 @@ button {
   background: green;
   color: white;
   border: none;
+} */
+
+
+
+body {
+  margin: 0;
+  font-family: 'Segoe UI', sans-serif;
+  background: #f0f2f5;
+}
+
+.container {
+  width: 350px;
+  margin: 80px auto;
+  background: white;
+  padding: 30px;
+  border-radius: 12px;
+  box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+}
+
+h2 {
+  text-align: center;
+}
+
+input, select {
+  width: 100%;
+  padding: 12px;
+  margin: 10px 0;
+  border-radius: 8px;
+  border: 1px solid #ddd;
+}
+
+button {
+  width: 100%;
+  padding: 12px;
+  margin-top: 10px;
+  background: #2ecc71;
+  border: none;
+  color: white;
+  font-size: 16px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #27ae60;
+}
+
+.dashboard {
+  display: flex;
+}
+
+.sidebar {
+  width: 220px;
+  background: #2c3e50;
+  color: white;
+  height: 100vh;
+  padding: 20px;
+}
+
+.main {
+  flex: 1;
+  padding: 20px;
+}
+
+.card {
+  background: white;
+  padding: 15px;
+  margin: 10px 0;
+  border-radius: 10px;
+  box-shadow: 0 3px 10px rgba(0,0,0,0.1);
 }
