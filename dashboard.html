@@ -1,4 +1,4 @@
-<!DOCTYPE html>
+<!-- <!DOCTYPE html>
 <html>
 <head>
   <title>Dashboard</title>
@@ -80,5 +80,44 @@ window.claim = async (id) => {
 loadFood();
 
 </script>
+</body>
+</html> -->
+
+
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Dashboard</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<div class="dashboard">
+
+  <div class="sidebar">
+    <h3>FoodShare</h3>
+    <p id="userRole"></p>
+  </div>
+
+  <div class="main">
+
+    <h2>Dashboard</h2>
+
+    <div id="donorSection">
+      <h3>Post Food</h3>
+      <input id="food" placeholder="Food">
+      <input id="qty" placeholder="Quantity">
+      <input id="loc" placeholder="Location">
+      <button id="postBtn">Post</button>
+    </div>
+
+    <h3>Available Food</h3>
+    <div id="list"></div>
+
+  </div>
+
+</div>
+
+<script type="module" src="dashboard.js"></script>
 </body>
 </html>
