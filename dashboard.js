@@ -1191,30 +1191,30 @@ function updateMapMarkers(donations) {
         }
     });
 }
-function renderFeed(donations) {
-    const feed = document.getElementById('available-feed');
-    feed.innerHTML = '';
-    if(donations.length === 0) {
-        feed.innerHTML = `<p style="color: var(--text-muted); grid-column: 1/-1;">No donations match your search criteria.</p>`;
-        return;
-    }
-    donations.forEach((item) => {
-        feed.innerHTML += `
-            <div class="data-card">
-                <img src="${item.image}" style="width:100%; height:160px; object-fit:cover; border-radius:8px; margin-bottom:12px;" alt="Food Image">
-                <span class="status-badge badge-available">Available</span>
-                <h4 class="card-title">${item.foodType}</h4>
-                <div class="card-detail"><strong>Quantity:</strong> <span>${item.quantity}</span></div>
-                <div class="card-detail"><strong>Expires:</strong> <span>${item.shelfLife}</span></div>
-                <div class="card-detail"><strong>Location:</strong> <span>${item.address}</span></div>
-                <div class="card-detail" style="margin-bottom: 0.5rem;"><strong>Donor:</strong> <span>${item.donorName}</span></div>
-                <button onclick="claimFood('${item.id}')" style="margin-top: auto;">Claim for Pickup</button>
-            </div>`;
-    });
-}
+// function renderFeed(donations) {
+//     const feed = document.getElementById('available-feed');
+//     feed.innerHTML = '';
+//     if(donations.length === 0) {
+//         feed.innerHTML = `<p style="color: var(--text-muted); grid-column: 1/-1;">No donations match your search criteria.</p>`;
+//         return;
+//     }
+//     donations.forEach((item) => {
+//         feed.innerHTML += `
+//             <div class="data-card">
+//                 <img src="${item.image}" style="width:100%; height:160px; object-fit:cover; border-radius:8px; margin-bottom:12px;" alt="Food Image">
+//                 <span class="status-badge badge-available">Available</span>
+//                 <h4 class="card-title">${item.foodType}</h4>
+//                 <div class="card-detail"><strong>Quantity:</strong> <span>${item.quantity}</span></div>
+//                 <div class="card-detail"><strong>Expires:</strong> <span>${item.shelfLife}</span></div>
+//                 <div class="card-detail"><strong>Location:</strong> <span>${item.address}</span></div>
+//                 <div class="card-detail" style="margin-bottom: 0.5rem;"><strong>Donor:</strong> <span>${item.donorName}</span></div>
+//                 <button onclick="claimFood('${item.id}')" style="margin-top: auto;">Claim for Pickup</button>
+//             </div>`;
+//     });
+// }
 
-document.getElementById('search-food').addEventListener('input', applyFiltersAndRender);
-document.getElementById('filter-location').addEventListener('change', applyFiltersAndRender);
+// document.getElementById('search-food').addEventListener('input', applyFiltersAndRender);
+// document.getElementById('filter-location').addEventListener('change', applyFiltersAndRender);
 
 // NGO: Claiming System
 window.claimFood = async (id) => {
