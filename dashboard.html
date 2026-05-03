@@ -308,13 +308,30 @@
             
             <!-- Search and Filter Bar -->
             <div style="display: flex; gap: 15px; margin-bottom: 20px;">
-                <input type="text" id="search-food" placeholder="🔍 Search food (e.g., Rice, Curry)..." style="flex: 2; padding: 10px; border: 1px solid #ccc; border-radius: 6px;">
-                <select id="filter-location" style="flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 6px;">
+                <!-- Food Search with Icon -->
+                <div style="flex: 2; position: relative;">
+                    <span style="position: absolute; left: 12px; top: 12px; color: #888;">🔍</span>
+                    <input type="text" id="search-food" placeholder="Search food (e.g., Rice, Curry)..." style="width: 100%; padding: 10px 10px 10px 35px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 14px;">
+                </div>
+                <!-- <input type="text" id="search-food" placeholder="🔍 Search food (e.g., Rice, Curry)..." style="flex: 2; padding: 10px; border: 1px solid #ccc; border-radius: 6px;"> -->
+                <!-- <select id="filter-location" style="flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 6px;">
                     <option value="all">All Locations</option>
                     <option value="lucknow">Lucknow</option>
                     <option value="kanpur">Kanpur</option>
-                    <option value="para">Para</option>
-                </select>
+                    <!-- <option value="para">Para</option> -->
+                <!-- </select>
+            </div> --> -->
+                <!-- Location Filter with Icon -->
+                <div style="flex: 1; position: relative;">
+                    <span style="position: absolute; left: 12px; top: 12px; color: #888;">📍</span>
+                    <select id="filter-location" style="width: 100%; padding: 10px 10px 10px 35px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 14px;">
+                        <option value="all">All Locations</option>
+                        <option value="lucknow">Lucknow</option>
+                        <option value="kanpur">Kanpur</option>
+                        <option value="para">Para</option>
+                        <option value="buddheshwar">Buddheshwar</option>
+                    </select>
+                </div>
             </div>
 
             <!-- NEW: The Google Map Container -->
