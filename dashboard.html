@@ -260,11 +260,109 @@
             <button id="logout-btn" class="btn-logout">Logout</button>
         </div>
     </header>
-
     <main class="dashboard-main">
         
         <!-- ================= DONOR WORKSPACE ================= -->
         <div id="donor-section" class="hidden">
+            
+            <!-- NEW: Donor Progress & Badges -->
+            <div id="donor-badge-display"></div>
+
+            <h3 class="section-header">Post a New Donation</h3>
+            <div class="post-donation-card">
+                <form id="donation-form">
+                    <!-- Added flex-wrap for Responsive Design -->
+                    <div class="form-row" style="display: flex; flex-wrap: wrap; gap: 15px;">
+                        <div class="form-group" style="flex: 1; min-width: 250px;">
+                            <label>Food Item</label>
+                            <input type="text" id="food-type" placeholder="e.g., Rice & Curry" required>
+                        </div>
+                        <div class="form-group" style="flex: 1; min-width: 250px;">
+                            <label>Quantity</label>
+                            <!-- NEW: Cleaner Form Validation (Number + Dropdown) -->
+                            <div style="display: flex; gap: 10px;">
+                                <input type="number" id="quantity" placeholder="e.g., 10" required min="1" style="flex: 2;">
+                                <select id="quantity-unit" style="flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 6px;">
+                                    <option value="kg">kg</option>
+                                    <option value="servings">Servings</option>
+                                    <option value="packets">Packets</option>
+                                </select>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="form-row" style="display: flex; flex-wrap: wrap; gap: 15px;">
+                        <div class="form-group" style="flex: 1; min-width: 250px;">
+                            <label>Safe to consume for (Hours)</label>
+                            <!-- NEW: Strict Time validation -->
+                            <input type="number" id="shelf-life" placeholder="e.g., 4" required min="1">
+                        </div>
+                        <div class="form-group" style="flex: 1; min-width: 250px;">
+                            <label>Pickup Location</label>
+                            <input type="text" id="address" placeholder="Complete address for pickup" required>
+                        </div>
+                        <div class="form-group" style="flex: 1; min-width: 250px;">
+                            <label>Upload Food Photo</label>
+                            <input type="file" id="food-photo" accept="image/*" required>
+                            <!-- NEW: Image Preview Box -->
+                            <img id="photo-preview" style="max-width: 100%; height: 150px; display: none; object-fit: cover; border-radius: 8px; margin-top: 10px; border: 2px dashed #ccc;">
+                        </div>
+                    </div>
+                    <button type="submit" style="margin-top: 0.5rem;">List Food Item</button>
+                </form>
+            </div>
+
+            <h3 class="section-header">My Donation Tracking</h3>
+            <div id="donor-history" class="dashboard-grid">
+                <!-- Donor history will load here -->
+            </div>
+        </div>
+
+        <!-- ================= NGO WORKSPACE ================= -->
+        <div id="ngo-section" class="hidden">
+            
+            <!-- NEW: NGO Claim Tracking Area -->
+            <h3 class="section-header" id="my-claims-header" style="display:none; color: var(--primary);">Active Pickups (Needs Completion)</h3>
+            <div id="ngo-claims" class="dashboard-grid" style="margin-bottom: 30px;">
+                <!-- Claimed items to be marked as completed will go here -->
+            </div>
+
+            <h3 class="section-header">Available Food in Your Area</h3>
+            
+            <div style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;">
+                <div style="flex: 2; min-width: 250px; position: relative;">
+                    <span style="position: absolute; left: 12px; top: 12px; color: #888;">🔍</span>
+                    <input type="text" id="search-food" placeholder="Search food (e.g., Rice, Curry)..." style="width: 100%; padding: 10px 10px 10px 35px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 14px;">
+                </div>
+                
+                <div style="flex: 1; min-width: 150px; position: relative;">
+                    <span style="position: absolute; left: 12px; top: 12px; color: #888;">📍</span>
+                    <select id="filter-location" style="width: 100%; padding: 10px 10px 10px 35px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 14px;">
+                        <option value="all">All Locations</option>
+                        <option value="lucknow">Lucknow</option>
+                        <option value="kanpur">Kanpur</option>
+                        <option value="para">Para</option>
+                        <option value="buddheshwar">Buddheshwar</option>
+                    </select>
+                </div>
+            </div>
+
+            <!-- The Google Map Container -->
+            <div id="map" style="width: 100%; height: 400px; border-radius: 8px; margin-bottom: 20px; background: #e5e5e5; display: flex; align-items: center; justify-content: center; color: #888;">
+                Map will load here...
+            </div>
+
+            <div id="available-feed" class="dashboard-grid">
+                <!-- NGO feed will load here -->
+            </div>
+        </div>
+
+    </main>
+    
+
+    <!-- <main class="dashboard-main">
+        
+        <!-- ================= DONOR WORKSPACE ================= -->
+        <!-- <div id="donor-section" class="hidden">
             <h3 class="section-header">Post a New Donation</h3>
             <div class="post-donation-card">
                 <form id="donation-form">
@@ -297,22 +395,22 @@
             </div>
 
             <h3 class="section-header">My Donation History</h3>
-            <div id="donor-history" class="dashboard-grid">
+            <div id="donor-history" class="dashboard-grid"> -->
                 <!-- Donor history will load here -->
-            </div>
-        </div>
+            <!-- </div>
+        </div> -->
 
         <!-- ================= NGO WORKSPACE ================= -->
-        <div id="ngo-section" class="hidden">
+        <!-- <div id="ngo-section" class="hidden">
             <h3 class="section-header">Available Food in Your Area</h3>
             
             <!-- Search and Filter Bar -->
-            <div style="display: flex; gap: 15px; margin-bottom: 20px;">
+            <!-- <div style="display: flex; gap: 15px; margin-bottom: 20px;"> -->
                 <!-- Food Search with Icon -->
-                <div style="flex: 2; position: relative;">
+                <!-- <div style="flex: 2; position: relative;">
                     <span style="position: absolute; left: 12px; top: 12px; color: #888;">🔍</span>
                     <input type="text" id="search-food" placeholder="Search food (e.g., Rice, Curry)..." style="width: 100%; padding: 10px 10px 10px 35px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 14px;">
-                </div>
+                </div> --> -->
                 <!-- <input type="text" id="search-food" placeholder="🔍 Search food (e.g., Rice, Curry)..." style="flex: 2; padding: 10px; border: 1px solid #ccc; border-radius: 6px;"> -->
                 <!-- <select id="filter-location" style="flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 6px;">
                     <option value="all">All Locations</option>
@@ -322,7 +420,7 @@
                 <!-- </select>
             </div> --> -->
                 <!-- Location Filter with Icon -->
-                <div style="flex: 1; position: relative;">
+                <!-- <div style="flex: 1; position: relative;">
                     <span style="position: absolute; left: 12px; top: 12px; color: #888;">📍</span>
                     <select id="filter-location" style="width: 100%; padding: 10px 10px 10px 35px; border: 1px solid #ccc; border-radius: 6px; box-sizing: border-box; font-size: 14px;">
                         <option value="all">All Locations</option>
@@ -332,19 +430,19 @@
                         <option value="buddheshwar">Buddheshwar</option>
                     </select>
                 </div>
-            </div>
+            </div> -->
 
             <!-- NEW: The Google Map Container -->
-            <div id="map" style="width: 100%; height: 400px; border-radius: 8px; margin-bottom: 20px; background: #e5e5e5; display: flex; align-items: center; justify-content: center; color: #888;">
+            <!-- <div id="map" style="width: 100%; height: 400px; border-radius: 8px; margin-bottom: 20px; background: #e5e5e5; display: flex; align-items: center; justify-content: center; color: #888;">
                 Map will load here...
             </div>
 
-            <div id="available-feed" class="dashboard-grid">
+            <div id="available-feed" class="dashboard-grid"> -->
                 <!-- NGO feed will load here -->
-            </div>
+            <!-- </div>
         </div>
 
-    </main>
+    </main> --> -->
 
     <!-- Container for Real-Time Toast Notifications -->
     <div id="toast-container"></div>
