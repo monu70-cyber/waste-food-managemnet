@@ -761,6 +761,8 @@ function applyFiltersAndRender() {
     });
 
     renderFeed(filteredData);
+   // NEW: Update the map every time the feed updates!
+    updateMapMarkers(filteredData);     
 }
 
 // NEW: Draw the UI based on filtered data
@@ -856,4 +858,63 @@ document.getElementById('logout-btn').addEventListener('click', async () => {
         alert("Failed to log out. Check the console.");
     }
 });
+// --- Google Maps Integration ---
+let map;
+let mapMarkers = [];
+
+function updateMapMarkers(donations) {
+    // 1. Initialize map if it doesn't exist yet (Centered on Lucknow)
+    if (!map) {
+        map = new google.maps.Map(document.getElementById("map"), {
+            center: { lat: 26.8467, lng: 80.9462 }, 
+            zoom: 12,
+            mapTypeControl: false
+        });
+    }
+
+    const geocoder = new google.maps.Geocoder();
+
+    // 2. Clear old markers from the map
+    mapMarkers.forEach(marker => marker.setMap(null));
+    mapMarkers = [];
+
+    // 3. Add new markers for the current filtered donations
+    donations.forEach(item => {
+        if(item.address) {
+            // Append "Lucknow" to help the geocoder find local areas accurately
+            const searchAddress = item.address + ", Lucknow, India"; 
+            
+            geocoder.geocode({ address: searchAddress }, (results, status) => {
+                if (status === "OK") {
+                    const marker = new google.maps.Marker({
+                        map: map,
+                        position: results[0].geometry.location,
+                        title: item.foodType,
+                        animation: google.maps.Animation.DROP
+                    });
+                    
+                    // Add a click popup (InfoWindow) to the map pin
+                    const infoWindow = new google.maps.InfoWindow({
+                        content: `
+                            <div style="color: #333; padding: 5px;">
+                                <strong style="font-size: 14px;">${item.foodType}</strong><br>
+                                Qty: ${item.quantity}<br>
+                                Donor: ${item.donorName}<br>
+                                <button onclick="claimFood('${item.id}')" style="margin-top: 8px; background: #2ecc71; color: white; border: none; padding: 5px 10px; border-radius: 4px; cursor: pointer;">Claim Food</button>
+                            </div>
+                        `
+                    });
+
+                    marker.addListener('click', () => {
+                        infoWindow.open(map, marker);
+                    });
+
+                    mapMarkers.push(marker);
+                } else {
+                    console.warn("Could not find location for: " + item.address);
+                }
+            });
+        }
+    });
+}
 
