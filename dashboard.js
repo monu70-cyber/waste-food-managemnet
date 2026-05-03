@@ -859,40 +859,113 @@ document.getElementById('logout-btn').addEventListener('click', async () => {
     }
 });
 // --- Google Maps Integration ---
+// let map;
+// let mapMarkers = [];
+
+// function updateMapMarkers(donations) {
+//     // 1. Initialize map if it doesn't exist yet (Centered on Lucknow)
+//     if (!map) {
+//         map = new google.maps.Map(document.getElementById("map"), {
+//             center: { lat: 26.8467, lng: 80.9462 }, 
+//             zoom: 12,
+//             mapTypeControl: false
+//         });
+//     }
+
+//     const geocoder = new google.maps.Geocoder();
+
+//     // 2. Clear old markers from the map
+//     mapMarkers.forEach(marker => marker.setMap(null));
+//     mapMarkers = [];
+
+//     // 3. Add new markers for the current filtered donations
+//     donations.forEach(item => {
+//         if(item.address) {
+//             // Append "Lucknow" to help the geocoder find local areas accurately
+//             const searchAddress = item.address + ", Lucknow, India"; 
+            
+//             geocoder.geocode({ address: searchAddress }, (results, status) => {
+//                 if (status === "OK") {
+//                     const marker = new google.maps.Marker({
+//                         map: map,
+//                         position: results[0].geometry.location,
+//                         title: item.foodType,
+//                         animation: google.maps.Animation.DROP
+//                     });
+                    // --- Updated Google Maps Integration ---
 let map;
 let mapMarkers = [];
 
 function updateMapMarkers(donations) {
-    // 1. Initialize map if it doesn't exist yet (Centered on Lucknow)
+    // 1. Initialize map if it doesn't exist (Default center: Lucknow)
     if (!map) {
         map = new google.maps.Map(document.getElementById("map"), {
             center: { lat: 26.8467, lng: 80.9462 }, 
             zoom: 12,
-            mapTypeControl: false
+            mapTypeControl: false,
+            streetViewControl: false
         });
     }
 
     const geocoder = new google.maps.Geocoder();
 
-    // 2. Clear old markers from the map
+    // 2. Clear old markers
     mapMarkers.forEach(marker => marker.setMap(null));
     mapMarkers = [];
 
-    // 3. Add new markers for the current filtered donations
+    // 3. Add new markers
     donations.forEach(item => {
-        if(item.address) {
-            // Append "Lucknow" to help the geocoder find local areas accurately
-            const searchAddress = item.address + ", Lucknow, India"; 
+        if (item.address) {
+            // FIX: We clean the address and force "Lucknow, Uttar Pradesh" 
+            // This helps Google find local spots like "Para" or "Alambagh" accurately.
+            const cleanAddress = `${item.address}, Lucknow, Uttar Pradesh, India`;
             
-            geocoder.geocode({ address: searchAddress }, (results, status) => {
-                if (status === "OK") {
+            geocoder.geocode({ address: cleanAddress }, (results, status) => {
+                if (status === "OK" && results[0]) {
                     const marker = new google.maps.Marker({
                         map: map,
                         position: results[0].geometry.location,
                         title: item.foodType,
-                        animation: google.maps.Animation.DROP
+                        animation: google.maps.Animation.DROP,
+                        icon: 'http://maps.google.com/mapfiles/ms/icons/red-dot.png'
                     });
-                    
+
+                    const infoWindow = new google.maps.InfoWindow({
+                        content: `
+                            <div style="color: #333; font-family: sans-serif;">
+                                <strong>${item.foodType}</strong><br>
+                                <small>${item.address}</small><br>
+                                <button onclick="claimFood('${item.id}')" style="background:#2ecc71; color:white; border:none; padding:5px 10px; border-radius:4px; margin-top:5px; cursor:pointer;">Claim</button>
+                            </div>`
+                    });
+
+                    marker.addListener('click', () => {
+                        infoWindow.open(map, marker);
+                    });
+
+                    mapMarkers.push(marker);
+
+                    // If there is only one result (from a search), zoom into it
+                    if (donations.length === 1) {
+                        map.setCenter(results[0].geometry.location);
+                        map.setZoom(15);
+                    }
+                } else {
+                    console.error(`Geocode failed for "${cleanAddress}": ${status}`);
+                }
+            });
+        }
+    });
+
+    // 4. If showing multiple items, reset map view to show all pins
+    if (donations.length > 1) {
+        const bounds = new google.maps.LatLngBounds();
+        // Since geocoding is async, we'd normally wait, 
+        // but for now, we reset to Lucknow center if markers are spread out.
+        map.setZoom(12);
+        map.setCenter({ lat: 26.8467, lng: 80.9462 });
+    }
+}
                     // Add a click popup (InfoWindow) to the map pin
                     const infoWindow = new google.maps.InfoWindow({
                         content: `
