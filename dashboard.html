@@ -455,21 +455,30 @@
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDzkYh8_wqFB4F0mCoKvTouAkyMrysL_Yc"></script>
 
     <!-- 2. Main Logic with 'defer' to ensure everything is ready -->
-    <div id="chat-modal" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 1000; display: flex; justify-content: center; align-items: center;">
-        <div style="background: var(--bg-surface); width: 90%; max-width: 450px; border-radius: var(--radius-lg); display: flex; flex-direction: column; height: 500px; overflow: hidden; box-shadow: var(--shadow-hover); border: 1px solid var(--border-light);">
+    <!-- ================= IN-APP CHAT WIDGET ================= -->
+    <div id="chat-modal" class="hidden">
+        <div class="chat-widget-container">
             
-            <div style="background: var(--primary); color: white; padding: 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center;">
-                <h3 id="chat-header" style="font-size: 1.1rem; margin: 0; font-weight: 600;">Chat</h3>
-                <button onclick="closeChat()" style="background: none; border: none; color: white; font-size: 1.5rem; padding: 0; cursor: pointer; width: auto; box-shadow: none; font-weight: 300;">&times;</button>
+            <!-- Chat Header -->
+            <div class="chat-header">
+                <h3 id="chat-header">Chat</h3>
+                <button onclick="closeChat()" class="close-chat-btn" title="Close Chat">&times;</button>
             </div>
             
-            <div id="chat-messages" style="flex: 1; padding: 1.5rem; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; background: var(--bg-body);">
-                </div>
+            <!-- Chat Messages Area -->
+            <div id="chat-messages" class="chat-messages">
+                <!-- Messages will load here -->
+            </div>
             
-            <form id="chat-form" style="padding: 1rem; border-top: 1px solid var(--border-light); display: flex; gap: 10px; background: var(--bg-surface);">
-                <input type="text" id="chat-input" placeholder="Type a message..." autocomplete="off" required style="flex: 1; margin: 0; padding: 0.75rem 1rem;">
-                <button type="submit" style="width: auto; padding: 0.75rem 1.5rem; border-radius: 99px;">Send</button>
+            <!-- Chat Input Form -->
+            <form id="chat-form" class="chat-input-form">
+                <input type="text" id="chat-input" placeholder="Type a message..." autocomplete="off" required>
+                <button type="submit" class="send-btn" title="Send">
+                    <!-- Modern SVG Send Icon -->
+                    <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>
+                </button>
             </form>
+
         </div>
     </div>
     <script type="module" src="dashboard.js" defer></script>
