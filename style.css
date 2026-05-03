@@ -230,3 +230,125 @@ button:hover {
 @media (max-width: 600px) { 
     .form-row { grid-template-columns: 1fr; } 
 }
+/* ==========================================
+   10. FLOATING CHAT WIDGET
+   ========================================== */
+#chat-modal:not(.hidden) {
+    display: block !important;
+}
+
+.chat-widget-container {
+    position: fixed;
+    bottom: 24px;
+    right: 24px;
+    width: 360px;
+    height: 520px;
+    background: var(--bg-surface);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 10px 40px -10px rgba(15, 23, 42, 0.25);
+    border: 1px solid var(--border-light);
+    display: flex;
+    flex-direction: column;
+    z-index: 9999;
+    overflow: hidden;
+    /* Smooth slide-up entrance */
+    animation: slideUpChat 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+}
+
+@keyframes slideUpChat {
+    from { opacity: 0; transform: translateY(30px) scale(0.95); }
+    to { opacity: 1; transform: translateY(0) scale(1); }
+}
+
+.chat-header {
+    background: var(--primary);
+    color: white;
+    padding: 1.25rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.chat-header h3 {
+    font-size: 1.1rem;
+    margin: 0;
+    font-weight: 700;
+}
+
+.close-chat-btn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 1.75rem;
+    padding: 0;
+    width: auto;
+    height: auto;
+    cursor: pointer;
+    opacity: 0.8;
+    transition: all 0.2s;
+    line-height: 1;
+}
+
+.close-chat-btn:hover {
+    opacity: 1;
+    transform: scale(1.1);
+    background: transparent;
+    box-shadow: none;
+}
+
+.chat-messages {
+    flex: 1;
+    padding: 1.25rem;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    background: var(--bg-body);
+}
+
+.chat-input-form {
+    padding: 1rem;
+    border-top: 1px solid var(--border-light);
+    display: flex;
+    gap: 10px;
+    background: var(--bg-surface);
+    align-items: center;
+}
+
+.chat-input-form input {
+    flex: 1;
+    margin: 0;
+    padding: 0.75rem 1.25rem;
+    border-radius: 99px; /* Pill shape */
+    border: 1px solid var(--border-light);
+    background: var(--bg-body);
+}
+
+.chat-input-form input:focus {
+    background: var(--bg-surface);
+    border-color: var(--primary);
+}
+
+.send-btn {
+    width: 45px;
+    height: 45px;
+    border-radius: 50%; /* Perfect circle */
+    padding: 0;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    background: var(--primary);
+    color: white;
+    flex-shrink: 0;
+}
+
+/* Mobile Responsiveness: Make it full screen on tiny phones */
+@media (max-width: 500px) {
+    .chat-widget-container {
+        width: 100%;
+        height: 100%;
+        bottom: 0;
+        right: 0;
+        border-radius: 0;
+    }
+}
