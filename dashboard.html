@@ -333,8 +333,13 @@
     <div id="toast-container"></div>
 
     <!-- NEW: Google Maps API Script (Remember to replace YOUR_API_KEY later!) -->
+    <!-- <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDzkYh8_wqFB4F0mCoKvTouAkyMrysL_Yc"></script>
+
+    <script type="module" src="dashboard.js"></script> -->
+    <!-- 1. Google Maps API -->
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDzkYh8_wqFB4F0mCoKvTouAkyMrysL_Yc"></script>
 
-    <script type="module" src="dashboard.js"></script>
+    <!-- 2. Main Logic with 'defer' to ensure everything is ready -->
+    <script type="module" src="dashboard.js" defer></script>
 </body>
 </html>
