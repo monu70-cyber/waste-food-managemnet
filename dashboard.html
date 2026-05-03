@@ -221,7 +221,17 @@
         <!-- ================= NGO WORKSPACE ================= -->
         <div id="ngo-section" class="hidden">
             <h3 class="section-header">Available Food in Your Area</h3>
+            <div style="display: flex; gap: 15px; margin-bottom: 20px;">
+                <input type="text" id="search-food" placeholder="🔍 Search food (e.g., Rice, Curry)..." style="flex: 2; padding: 10px; border: 1px solid #ccc; border-radius: 6px;">
+                <select id="filter-location" style="flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 6px;">
+                    <option value="all">All Locations</option>
+                    <option value="lucknow">Lucknow</option>
+                    <option value="kanpur">Kanpur</option>
+                    <option value="para">Para</option>
+                </select>
+            </div>
             <div id="available-feed" class="dashboard-grid">
+                
                 <!-- NGO feed will load here -->
             </div>
         </div>
