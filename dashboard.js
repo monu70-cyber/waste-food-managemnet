@@ -1083,20 +1083,114 @@ function loadAvailableFood() {
     });
 }
 
+// function applyFiltersAndRender() {
+//     const searchTerm = document.getElementById('search-food').value.toLowerCase();
+//     const locationFilter = document.getElementById('filter-location').value.toLowerCase();
+
+//     const filteredData = allAvailableDonations.filter(item => {
+//         const matchesSearch = item.foodType.toLowerCase().includes(searchTerm) || item.donorName.toLowerCase().includes(searchTerm);
+//         const matchesLocation = locationFilter === 'all' || item.address.toLowerCase().includes(locationFilter);
+//         return matchesSearch && matchesLocation;
+//     });
+
+//     renderFeed(filteredData);
+//     updateMapMarkers(filteredData);     
+// }
+// 1. The Filter Function (Triggers the map update)
 function applyFiltersAndRender() {
     const searchTerm = document.getElementById('search-food').value.toLowerCase();
     const locationFilter = document.getElementById('filter-location').value.toLowerCase();
 
+    // Filter the data based on what the NGO typed
     const filteredData = allAvailableDonations.filter(item => {
         const matchesSearch = item.foodType.toLowerCase().includes(searchTerm) || item.donorName.toLowerCase().includes(searchTerm);
         const matchesLocation = locationFilter === 'all' || item.address.toLowerCase().includes(locationFilter);
+        
         return matchesSearch && matchesLocation;
     });
 
+    // Update the text list
     renderFeed(filteredData);
+    
+    // Update the Map with ONLY the filtered data
     updateMapMarkers(filteredData);     
 }
+// 2. The Smart Map Function (Handles zooming and pins)
+function updateMapMarkers(donations) {
+    if (!map) return; // Safety check
 
+    const geocoder = new google.maps.Geocoder();
+    const bounds = new google.maps.LatLngBounds(); // Used to calculate map zoom
+    let markersProcessed = 0;
+
+    // Clear old markers off the map before dropping new ones
+    mapMarkers.forEach(marker => marker.setMap(null));
+    mapMarkers = [];
+
+    // If search returns nothing, reset map to default city view
+    if (donations.length === 0) {
+        map.setCenter({ lat: 26.8467, lng: 80.9462 }); // Lucknow Center
+        map.setZoom(12);
+        return;
+    }
+
+    // Loop through the filtered donations and drop pins
+    donations.forEach(item => {
+        if (item.address) {
+            // Force location to Lucknow for better geocoding accuracy
+            const cleanAddress = `${item.address}, Lucknow, Uttar Pradesh, India`;
+            
+            geocoder.geocode({ address: cleanAddress }, (results, status) => {
+                markersProcessed++; // Keep track of how many we have processed
+
+                if (status === "OK" && results[0]) {
+                    const markerLocation = results[0].geometry.location;
+                    
+                    const marker = new google.maps.Marker({
+                        map: map,
+                        position: markerLocation,
+                        title: item.foodType,
+                        animation: google.maps.Animation.DROP,
+                        icon: 'http://maps.google.com/mapfiles/ms/icons/red-dot.png'
+                    });
+
+                    // Build the popup window for the pin
+                    const infoWindow = new google.maps.InfoWindow({
+                        content: `
+                            <div style="color: #333; font-family: sans-serif; padding: 5px;">
+                                <strong style="font-size: 16px;">${item.foodType}</strong><br>
+                                <span style="color: #666;">Quantity: ${item.quantity}</span><br>
+                                <small>${item.address}</small><br>
+                                <button onclick="claimFood('${item.id}')" style="background:#2ecc71; color:white; border:none; padding:8px 12px; border-radius:4px; margin-top:10px; cursor:pointer; width: 100%; font-weight: bold;">Claim for Pickup</button>
+                            </div>`
+                    });
+
+                    marker.addListener('click', () => infoWindow.open(map, marker));
+                    mapMarkers.push(marker);
+                    
+                    // Add this pin's location to our map boundaries
+                    bounds.extend(markerLocation);
+                } else {
+                    console.warn(`Could not map address: ${cleanAddress}`);
+                }
+
+                // Once all pins have been checked, automatically adjust the camera
+                if (markersProcessed === donations.length) {
+                    if (mapMarkers.length === 1) {
+                        // Only 1 result? Zoom in close!
+                        map.setCenter(mapMarkers[0].getPosition());
+                        map.setZoom(15);
+                    } else if (mapMarkers.length > 1) {
+                        // Multiple results? Zoom out to fit all of them on screen!
+                        map.fitBounds(bounds);
+                    }
+                }
+            });
+        } else {
+            markersProcessed++; // Skip items with no address safely
+        }
+    });
+}
 function renderFeed(donations) {
     const feed = document.getElementById('available-feed');
     feed.innerHTML = '';
