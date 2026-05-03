@@ -1610,6 +1610,303 @@
 //         }
 //     });
 // }
+// import { auth, db, storage } from './firebase.js'; 
+// import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+// import { 
+//     collection, addDoc, query, where, onSnapshot, doc, getDoc, updateDoc, serverTimestamp, deleteDoc 
+// } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+// import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
+
+// const donorSection = document.getElementById('donor-section');
+// const ngoSection = document.getElementById('ngo-section');
+// const userDisplay = document.getElementById('user-display');
+
+// // 1. Crash-Proof User Auth State
+// onAuthStateChanged(auth, async (user) => {
+//     if (user) {
+//         try {
+//             const userDoc = await getDoc(doc(db, "users", user.uid));
+//             if (userDoc.exists()) {
+//                 const userData = userDoc.data();
+//                 userDisplay.innerText = `${userData.name} • ${userData.role.toUpperCase()}`;
+
+//                 if (userData.role === 'donor') {
+//                     donorSection.classList.remove('hidden');
+//                     loadDonorHistory(user.uid);
+//                 } else {
+//                     ngoSection.classList.remove('hidden');
+//                     loadAvailableFood();
+//                 }
+//             } else {
+//                 userDisplay.innerText = "Account Data Missing";
+//             }
+//         } catch (error) {
+//             userDisplay.innerText = "Database Error";
+//             console.error("Auth error:", error);
+//         }
+//     } else {
+//         window.location.href = 'index.html';
+//     }
+// });
+
+// // Donor: Submit Donation
+// document.getElementById('donation-form').onsubmit = async (e) => {
+//     e.preventDefault();
+//     const submitBtn = e.target.querySelector('button');
+//     submitBtn.innerText = "Uploading...";
+//     submitBtn.disabled = true;
+
+//     const file = document.getElementById('food-photo').files[0];
+//     let photoURL = "https://via.placeholder.com/300?text=No+Image+Available";
+
+//     try {
+//         if (file) {
+//             const storageRef = ref(storage, `food_images/${Date.now()}_${file.name}`);
+//             const snapshot = await uploadBytes(storageRef, file);
+//             photoURL = await getDownloadURL(snapshot.ref);
+//         }
+
+//         const foodData = {
+//             foodType: document.getElementById('food-type').value,
+//             quantity: document.getElementById('quantity').value,
+//             shelfLife: document.getElementById('shelf-life').value,
+//             address: document.getElementById('address').value,
+//             image: photoURL,
+//             donorId: auth.currentUser.uid,
+//             donorName: userDisplay.innerText.split(' •')[0],
+//             status: 'available',
+//             createdAt: serverTimestamp()
+//         };
+
+//         await addDoc(collection(db, "donations"), foodData);
+//         e.target.reset(); 
+//         alert("Donation posted successfully!");
+//     } catch (error) { 
+//         alert("Error: " + error.message); 
+//     } finally {
+//         submitBtn.innerText = "List Food Item";
+//         submitBtn.disabled = false;
+//     }
+// };
+
+// // ==========================================
+// // NGO: DATA, FILTERS, AND FEED RENDERING
+// // ==========================================
+// let allAvailableDonations = [];
+
+// function loadAvailableFood() {
+//     const q = query(collection(db, "donations"), where("status", "==", "available"));
+//     onSnapshot(q, (snapshot) => {
+//         allAvailableDonations = [];
+//         snapshot.forEach((docSnap) => {
+//             allAvailableDonations.push({ id: docSnap.id, ...docSnap.data() });
+//         });
+//         applyFiltersAndRender();
+//     });
+// }
+
+// function applyFiltersAndRender() {
+//     const searchTerm = document.getElementById('search-food').value.toLowerCase();
+//     const locationFilter = document.getElementById('filter-location').value.toLowerCase();
+
+//     // Filter the data based on what the NGO typed
+//     const filteredData = allAvailableDonations.filter(item => {
+//         const matchesSearch = item.foodType.toLowerCase().includes(searchTerm) || item.donorName.toLowerCase().includes(searchTerm);
+//         const matchesLocation = locationFilter === 'all' || item.address.toLowerCase().includes(locationFilter);
+        
+//         return matchesSearch && matchesLocation;
+//     });
+
+//     // Draw the UI Cards
+//     renderFeed(filteredData);
+    
+//     // Draw the Map Pins
+//     updateMapMarkers(filteredData);     
+// }
+
+// // Draw the HTML UI Cards
+// function renderFeed(donations) {
+//     const feed = document.getElementById('available-feed');
+//     feed.innerHTML = '';
+    
+//     if(donations.length === 0) {
+//         feed.innerHTML = `<p style="color: var(--text-muted); grid-column: 1/-1;">No donations match your search criteria.</p>`;
+//         return;
+//     }
+    
+//     donations.forEach((item) => {
+//         feed.innerHTML += `
+//             <div class="data-card">
+//                 <img src="${item.image}" style="width:100%; height:160px; object-fit:cover; border-radius:8px; margin-bottom:12px;" alt="Food Image">
+//                 <span class="status-badge badge-available">Available</span>
+//                 <h4 class="card-title">${item.foodType}</h4>
+//                 <div class="card-detail"><strong>Quantity:</strong> <span>${item.quantity}</span></div>
+//                 <div class="card-detail"><strong>Expires:</strong> <span>${item.shelfLife}</span></div>
+//                 <div class="card-detail"><strong>Location:</strong> <span>${item.address}</span></div>
+//                 <div class="card-detail" style="margin-bottom: 0.5rem;"><strong>Donor:</strong> <span>${item.donorName}</span></div>
+//                 <button onclick="claimFood('${item.id}')" style="margin-top: auto; background-color: var(--primary); color: white; border: none; padding: 0.5rem; border-radius: 6px; cursor: pointer; font-weight: bold;">Claim for Pickup</button>
+//             </div>`;
+//     });
+// }
+
+// // Search Listeners
+// document.getElementById('search-food').addEventListener('input', applyFiltersAndRender);
+// document.getElementById('filter-location').addEventListener('change', applyFiltersAndRender);
+
+// // ==========================================
+// // NGO: CLAIMING & DONOR MANAGEMENT
+// // ==========================================
+// window.claimFood = async (id) => {
+//     if(confirm("Are you sure you want to claim this food? You must coordinate pickup immediately.")) {
+//         const donationRef = doc(db, "donations", id);
+//         await updateDoc(donationRef, {
+//             status: 'claimed',
+//             claimedBy: auth.currentUser.uid,
+//             claimedByName: userDisplay.innerText.split(' •')[0]
+//         });
+//     }
+// };
+
+// // Donor: View History
+// function loadDonorHistory(uid) {
+//     const q = query(collection(db, "donations"), where("donorId", "==", uid));
+//     onSnapshot(q, (snapshot) => {
+//         const history = document.getElementById('donor-history');
+//         history.innerHTML = '';
+        
+//         if(snapshot.empty) {
+//             history.innerHTML = `<p style="color: var(--text-muted); grid-column: 1/-1;">You haven't posted any donations yet.</p>`;
+//             return;
+//         }
+
+//         snapshot.forEach((docSnap) => {
+//             const item = docSnap.data();
+//             const isAvailable = item.status === 'available';
+//             history.innerHTML += `
+//                 <div class="data-card">
+//                     <img src="${item.image}" style="width:100%; height:120px; object-fit:cover; border-radius:8px; margin-bottom:12px;" alt="Food Image">
+//                     <span class="status-badge ${isAvailable ? 'badge-available' : 'badge-claimed'}">${item.status}</span>
+//                     <h4 class="card-title">${item.foodType}</h4>
+//                     <div class="card-detail"><strong>Quantity:</strong> <span>${item.quantity}</span></div>
+//                     <div class="card-detail"><strong>Location:</strong> <span>${item.address}</span></div>
+//                     ${!isAvailable ? `<div class="card-detail" style="margin-top: 0.5rem; color: var(--primary-dark);"><strong>Claimed By:</strong> <span>${item.claimedByName}</span></div>` : ''}
+//                     ${isAvailable ? `<button onclick="deleteDonorItem('${docSnap.id}')" style="margin-top: 10px; width: 100%; background-color: #ef4444; color: white; border: none; padding: 0.5rem; border-radius: 6px; cursor: pointer; font-weight: bold;">Delete Listing</button>` : ''}
+//                 </div>`;
+//         });
+//     });
+// }
+
+// window.deleteDonorItem = async (id) => {
+//     if(confirm("Delete this listing permanently?")) {
+//         try { await deleteDoc(doc(db, "donations", id)); } 
+//         catch (error) { alert("Error: " + error.message); }
+//     }
+// };
+
+// // Logout Logic
+// document.getElementById('logout-btn').addEventListener('click', async () => {
+//     try {
+//         await signOut(auth);
+//         window.location.href = 'index.html';
+//     } catch (error) { console.error("Logout error:", error); }
+// });
+
+// // ==========================================
+// // SMART GOOGLE MAPS INTEGRATION
+// // ==========================================
+// let map;
+// let mapMarkers = [];
+
+// function updateMapMarkers(donations) {
+//     // FAIL-SAFE: Wait for Google Maps to load
+//     if (typeof google === 'undefined') {
+//         setTimeout(() => updateMapMarkers(donations), 500);
+//         return;
+//     }
+
+//     if (!map) {
+//         map = new google.maps.Map(document.getElementById("map"), {
+//             center: { lat: 26.8467, lng: 80.9462 }, 
+//             zoom: 12,
+//             mapTypeControl: false,
+//             streetViewControl: false
+//         });
+//     }
+
+//     const geocoder = new google.maps.Geocoder();
+//     const bounds = new google.maps.LatLngBounds(); 
+//     let markersProcessed = 0;
+
+//     // Clear old markers off the map
+//     mapMarkers.forEach(marker => marker.setMap(null));
+//     mapMarkers = [];
+
+//     // If no donations match, zoom out to city view
+//     if (donations.length === 0) {
+//         map.setCenter({ lat: 26.8467, lng: 80.9462 }); 
+//         map.setZoom(12);
+//         return;
+//     }
+
+//     donations.forEach(item => {
+//         if (item.address) {
+//             // SMART ADDRESS FORMATTING: Prevent duplicate "Lucknow" strings
+//             let cleanAddress = item.address;
+//             if (!cleanAddress.toLowerCase().includes("lucknow")) {
+//                 cleanAddress += ", Lucknow";
+//             }
+//             cleanAddress += ", Uttar Pradesh, India";
+            
+//             geocoder.geocode({ address: cleanAddress }, (results, status) => {
+//                 markersProcessed++;
+
+//                 if (status === "OK" && results[0]) {
+//                     const markerLocation = results[0].geometry.location;
+                    
+//                     const marker = new google.maps.Marker({
+//                         map: map,
+//                         position: markerLocation,
+//                         title: item.foodType,
+//                         animation: google.maps.Animation.DROP,
+//                         icon: 'http://maps.google.com/mapfiles/ms/icons/red-dot.png'
+//                     });
+
+//                     const infoWindow = new google.maps.InfoWindow({
+//                         content: `
+//                             <div style="color: #333; font-family: sans-serif; padding: 5px;">
+//                                 <strong style="font-size: 16px;">${item.foodType}</strong><br>
+//                                 <span style="color: #666;">Quantity: ${item.quantity}</span><br>
+//                                 <small>${item.address}</small><br>
+//                                 <button onclick="claimFood('${item.id}')" style="background:#2ecc71; color:white; border:none; padding:8px 12px; border-radius:4px; margin-top:10px; cursor:pointer; width: 100%; font-weight: bold;">Claim</button>
+//                             </div>`
+//                     });
+
+//                     marker.addListener('click', () => infoWindow.open(map, marker));
+//                     mapMarkers.push(marker);
+//                     bounds.extend(markerLocation);
+//                 } else {
+//                     console.warn(`Could not map address: ${cleanAddress}`);
+//                 }
+
+//                 // CAMERA ZOOM LOGIC
+//                 if (markersProcessed === donations.length) {
+//                     if (mapMarkers.length === 1) {
+//                         // Exactly 1 result (e.g., searched for "rice"): Zoom in to street level!
+//                         map.setCenter(mapMarkers[0].getPosition());
+//                         map.setZoom(16); 
+//                     } else if (mapMarkers.length > 1) {
+//                         // Multiple results: Zoom out to fit all pins on screen
+//                         map.fitBounds(bounds);
+//                         // Prevent the map from zooming in too close if all pins are right next to each other
+//                         if (map.getZoom() > 16) map.setZoom(16);
+//                     }
+//                 }
+//             });
+//         } else {
+//             markersProcessed++; // Skip items without addresses safely
+//         }
+//     });
+// }
 import { auth, db, storage } from './firebase.js'; 
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { 
@@ -1636,16 +1933,28 @@ onAuthStateChanged(auth, async (user) => {
                 } else {
                     ngoSection.classList.remove('hidden');
                     loadAvailableFood();
+                    loadNGOClaims(user.uid); // Load active pickups for NGO
                 }
-            } else {
-                userDisplay.innerText = "Account Data Missing";
             }
         } catch (error) {
-            userDisplay.innerText = "Database Error";
             console.error("Auth error:", error);
         }
     } else {
         window.location.href = 'index.html';
+    }
+});
+
+// NEW: Instant Photo Preview Logic
+document.getElementById('food-photo').addEventListener('change', function(e) {
+    const file = e.target.files[0];
+    if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            const preview = document.getElementById('photo-preview');
+            preview.src = e.target.result;
+            preview.style.display = 'block';
+        }
+        reader.readAsDataURL(file);
     }
 });
 
@@ -1659,6 +1968,10 @@ document.getElementById('donation-form').onsubmit = async (e) => {
     const file = document.getElementById('food-photo').files[0];
     let photoURL = "https://via.placeholder.com/300?text=No+Image+Available";
 
+    // NEW: Calculate Expiry Time based on hours
+    const hoursValid = parseInt(document.getElementById('shelf-life').value);
+    const expiryTimestamp = Date.now() + (hoursValid * 60 * 60 * 1000);
+
     try {
         if (file) {
             const storageRef = ref(storage, `food_images/${Date.now()}_${file.name}`);
@@ -1668,18 +1981,20 @@ document.getElementById('donation-form').onsubmit = async (e) => {
 
         const foodData = {
             foodType: document.getElementById('food-type').value,
-            quantity: document.getElementById('quantity').value,
-            shelfLife: document.getElementById('shelf-life').value,
+            quantity: document.getElementById('quantity').value + ' ' + document.getElementById('quantity-unit').value,
+            shelfLifeHours: hoursValid,
+            expiryTime: expiryTimestamp, // Store timestamp for alerts
             address: document.getElementById('address').value,
             image: photoURL,
             donorId: auth.currentUser.uid,
             donorName: userDisplay.innerText.split(' •')[0],
-            status: 'available',
+            status: 'available', // Tracker: 1. available, 2. picked_up, 3. completed
             createdAt: serverTimestamp()
         };
 
         await addDoc(collection(db, "donations"), foodData);
         e.target.reset(); 
+        document.getElementById('photo-preview').style.display = 'none'; // hide preview
         alert("Donation posted successfully!");
     } catch (error) { 
         alert("Error: " + error.message); 
@@ -1709,22 +2024,16 @@ function applyFiltersAndRender() {
     const searchTerm = document.getElementById('search-food').value.toLowerCase();
     const locationFilter = document.getElementById('filter-location').value.toLowerCase();
 
-    // Filter the data based on what the NGO typed
     const filteredData = allAvailableDonations.filter(item => {
         const matchesSearch = item.foodType.toLowerCase().includes(searchTerm) || item.donorName.toLowerCase().includes(searchTerm);
         const matchesLocation = locationFilter === 'all' || item.address.toLowerCase().includes(locationFilter);
-        
         return matchesSearch && matchesLocation;
     });
 
-    // Draw the UI Cards
     renderFeed(filteredData);
-    
-    // Draw the Map Pins
     updateMapMarkers(filteredData);     
 }
 
-// Draw the HTML UI Cards
 function renderFeed(donations) {
     const feed = document.getElementById('available-feed');
     feed.innerHTML = '';
@@ -1735,45 +2044,123 @@ function renderFeed(donations) {
     }
     
     donations.forEach((item) => {
+        // NEW: Expiry Alert Math
+        const hoursLeft = (item.expiryTime - Date.now()) / (1000 * 60 * 60);
+        let expiryAlert = '';
+        if (hoursLeft <= 0) {
+            expiryAlert = `<span style="color: red; font-weight: bold; background: #ffebeb; padding: 2px 6px; border-radius: 4px; font-size: 12px;">⚠️ EXPIRED</span>`;
+        } else if (hoursLeft <= 2) { // Less than 2 hours left
+            expiryAlert = `<span style="color: #d35400; font-weight: bold; background: #fdebd0; padding: 2px 6px; border-radius: 4px; font-size: 12px;">⏳ Expiring Soon!</span>`;
+        } else {
+            expiryAlert = `<span style="color: green;">Valid for ${Math.round(hoursLeft)} hr(s)</span>`;
+        }
+
         feed.innerHTML += `
-            <div class="data-card">
-                <img src="${item.image}" style="width:100%; height:160px; object-fit:cover; border-radius:8px; margin-bottom:12px;" alt="Food Image">
+            <div class="data-card" style="${hoursLeft <= 0 ? 'opacity: 0.6;' : ''}">
+                <img src="${item.image}" style="width:100%; height:160px; object-fit:cover; border-radius:8px; margin-bottom:12px;">
                 <span class="status-badge badge-available">Available</span>
                 <h4 class="card-title">${item.foodType}</h4>
                 <div class="card-detail"><strong>Quantity:</strong> <span>${item.quantity}</span></div>
-                <div class="card-detail"><strong>Expires:</strong> <span>${item.shelfLife}</span></div>
+                <div class="card-detail"><strong>Status:</strong> ${expiryAlert}</div>
                 <div class="card-detail"><strong>Location:</strong> <span>${item.address}</span></div>
                 <div class="card-detail" style="margin-bottom: 0.5rem;"><strong>Donor:</strong> <span>${item.donorName}</span></div>
-                <button onclick="claimFood('${item.id}')" style="margin-top: auto; background-color: var(--primary); color: white; border: none; padding: 0.5rem; border-radius: 6px; cursor: pointer; font-weight: bold;">Claim for Pickup</button>
+                
+                ${hoursLeft > 0 ? `<button onclick="claimFood('${item.id}')" style="margin-top: auto; background-color: var(--primary); color: white; border: none; padding: 0.5rem; border-radius: 6px; cursor: pointer; font-weight: bold;">Claim for Pickup</button>` : `<button disabled style="margin-top: auto; background-color: #ccc; border: none; padding: 0.5rem; border-radius: 6px;">Food Expired</button>`}
             </div>`;
     });
 }
 
-// Search Listeners
 document.getElementById('search-food').addEventListener('input', applyFiltersAndRender);
 document.getElementById('filter-location').addEventListener('change', applyFiltersAndRender);
 
 // ==========================================
-// NGO: CLAIMING & DONOR MANAGEMENT
+// NGO: CLAIMING & COMPLETING LOGIC
 // ==========================================
 window.claimFood = async (id) => {
-    if(confirm("Are you sure you want to claim this food? You must coordinate pickup immediately.")) {
+    if(confirm("Claim this food? You must coordinate pickup immediately.")) {
         const donationRef = doc(db, "donations", id);
         await updateDoc(donationRef, {
-            status: 'claimed',
+            status: 'picked_up', // Changes status from available to picked up
             claimedBy: auth.currentUser.uid,
             claimedByName: userDisplay.innerText.split(' •')[0]
         });
     }
 };
 
-// Donor: View History
+window.completeDonation = async (id) => {
+    if(confirm("Mark as Distributed/Completed? This removes it from your active list.")) {
+        const donationRef = doc(db, "donations", id);
+        await updateDoc(donationRef, {
+            status: 'completed'
+        });
+    }
+};
+
+// NEW: Load NGO's Active Pickups
+function loadNGOClaims(uid) {
+    const q = query(collection(db, "donations"), where("claimedBy", "==", uid), where("status", "==", "picked_up"));
+    onSnapshot(q, (snapshot) => {
+        const claimsBox = document.getElementById('ngo-claims');
+        const claimsHeader = document.getElementById('my-claims-header');
+        claimsBox.innerHTML = '';
+        
+        if(snapshot.empty) {
+            claimsHeader.style.display = 'none';
+            return;
+        }
+
+        claimsHeader.style.display = 'block'; // Show section if they have claims
+        snapshot.forEach((docSnap) => {
+            const item = docSnap.data();
+            claimsBox.innerHTML += `
+                <div class="data-card" style="border: 2px solid var(--primary);">
+                    <h4 class="card-title">You are picking up: ${item.foodType}</h4>
+                    <div class="card-detail"><strong>From:</strong> <span>${item.address}</span></div>
+                    <div class="card-detail"><strong>Donor:</strong> <span>${item.donorName}</span></div>
+                    <button onclick="completeDonation('${docSnap.id}')" style="margin-top: 15px; width: 100%; background-color: #27ae60; color: white; border: none; padding: 0.5rem; border-radius: 6px; cursor: pointer; font-weight: bold;">✅ Mark as Completed</button>
+                </div>`;
+        });
+    });
+}
+
+// ==========================================
+// DONOR: HISTORY & BADGES
+// ==========================================
 function loadDonorHistory(uid) {
     const q = query(collection(db, "donations"), where("donorId", "==", uid));
     onSnapshot(q, (snapshot) => {
         const history = document.getElementById('donor-history');
         history.innerHTML = '';
         
+        const totalDonations = snapshot.size;
+
+        // NEW: Progress Bar & Donor Badges Math
+        let badge = '🥉 Bronze Donor';
+        let badgeColor = '#cd7f32'; // Bronze color
+        let nextTier = 5;
+        
+        if (totalDonations >= 15) { 
+            badge = '🏆 Gold Donor'; 
+            badgeColor = '#f1c40f'; // Gold
+            nextTier = totalDonations; // Max tier
+        } else if (totalDonations >= 5) { 
+            badge = '🥈 Silver Donor'; 
+            badgeColor = '#bdc3c7'; // Silver
+            nextTier = 15; 
+        }
+
+        const progressPercent = Math.min((totalDonations / nextTier) * 100, 100);
+        
+        document.getElementById('donor-badge-display').innerHTML = `
+            <div style="background: white; border-left: 5px solid ${badgeColor}; padding: 15px; border-radius: 8px; margin-bottom: 25px; box-shadow: 0 2px 4px rgba(0,0,0,0.05);">
+                <h4 style="margin:0 0 10px 0; color: #333;">Your Impact Level: <span style="color: ${badgeColor};">${badge}</span></h4>
+                <div style="background: #e0e0e0; border-radius: 10px; height: 10px; width: 100%; overflow: hidden;">
+                    <div style="background: ${badgeColor}; height: 10px; width: ${progressPercent}%; transition: width 0.5s ease-in-out;"></div>
+                </div>
+                <small style="color:#888; display: block; margin-top: 8px;">You've made ${totalDonations} donations! ${totalDonations < 15 ? `(Next tier at ${nextTier})` : 'You reached the top tier!'}</small>
+            </div>
+        `;
+
         if(snapshot.empty) {
             history.innerHTML = `<p style="color: var(--text-muted); grid-column: 1/-1;">You haven't posted any donations yet.</p>`;
             return;
@@ -1781,16 +2168,23 @@ function loadDonorHistory(uid) {
 
         snapshot.forEach((docSnap) => {
             const item = docSnap.data();
-            const isAvailable = item.status === 'available';
+            
+            // Map the 3 statuses to UI colors
+            let statusText = 'Pending Pickup';
+            let badgeClass = 'badge-available';
+            if (item.status === 'picked_up') { statusText = 'Picked Up / In Transit'; badgeClass = 'badge-claimed'; }
+            if (item.status === 'completed') { statusText = 'Completed / Distributed'; badgeClass = 'badge-completed'; } // Add .badge-completed { background: #27ae60 } to your CSS!
+
             history.innerHTML += `
                 <div class="data-card">
-                    <img src="${item.image}" style="width:100%; height:120px; object-fit:cover; border-radius:8px; margin-bottom:12px;" alt="Food Image">
-                    <span class="status-badge ${isAvailable ? 'badge-available' : 'badge-claimed'}">${item.status}</span>
+                    <img src="${item.image}" style="width:100%; height:120px; object-fit:cover; border-radius:8px; margin-bottom:12px;">
+                    <span class="status-badge ${badgeClass}">${statusText}</span>
                     <h4 class="card-title">${item.foodType}</h4>
                     <div class="card-detail"><strong>Quantity:</strong> <span>${item.quantity}</span></div>
                     <div class="card-detail"><strong>Location:</strong> <span>${item.address}</span></div>
-                    ${!isAvailable ? `<div class="card-detail" style="margin-top: 0.5rem; color: var(--primary-dark);"><strong>Claimed By:</strong> <span>${item.claimedByName}</span></div>` : ''}
-                    ${isAvailable ? `<button onclick="deleteDonorItem('${docSnap.id}')" style="margin-top: 10px; width: 100%; background-color: #ef4444; color: white; border: none; padding: 0.5rem; border-radius: 6px; cursor: pointer; font-weight: bold;">Delete Listing</button>` : ''}
+                    ${item.status !== 'available' ? `<div class="card-detail" style="margin-top: 0.5rem; color: var(--primary-dark);"><strong>Handled By:</strong> <span>${item.claimedByName}</span></div>` : ''}
+                    
+                    ${item.status === 'available' ? `<button onclick="deleteDonorItem('${docSnap.id}')" style="margin-top: 10px; width: 100%; background-color: #ef4444; color: white; border: none; padding: 0.5rem; border-radius: 6px; cursor: pointer;">Delete Listing</button>` : ''}
                 </div>`;
         });
     });
@@ -1818,7 +2212,6 @@ let map;
 let mapMarkers = [];
 
 function updateMapMarkers(donations) {
-    // FAIL-SAFE: Wait for Google Maps to load
     if (typeof google === 'undefined') {
         setTimeout(() => updateMapMarkers(donations), 500);
         return;
@@ -1837,24 +2230,22 @@ function updateMapMarkers(donations) {
     const bounds = new google.maps.LatLngBounds(); 
     let markersProcessed = 0;
 
-    // Clear old markers off the map
     mapMarkers.forEach(marker => marker.setMap(null));
     mapMarkers = [];
 
-    // If no donations match, zoom out to city view
-    if (donations.length === 0) {
+    // Only map items that are NOT expired
+    const activeDonations = donations.filter(item => (item.expiryTime - Date.now()) > 0);
+
+    if (activeDonations.length === 0) {
         map.setCenter({ lat: 26.8467, lng: 80.9462 }); 
         map.setZoom(12);
         return;
     }
 
-    donations.forEach(item => {
+    activeDonations.forEach(item => {
         if (item.address) {
-            // SMART ADDRESS FORMATTING: Prevent duplicate "Lucknow" strings
             let cleanAddress = item.address;
-            if (!cleanAddress.toLowerCase().includes("lucknow")) {
-                cleanAddress += ", Lucknow";
-            }
+            if (!cleanAddress.toLowerCase().includes("lucknow")) { cleanAddress += ", Lucknow"; }
             cleanAddress += ", Uttar Pradesh, India";
             
             geocoder.geocode({ address: cleanAddress }, (results, status) => {
@@ -1884,28 +2275,21 @@ function updateMapMarkers(donations) {
                     marker.addListener('click', () => infoWindow.open(map, marker));
                     mapMarkers.push(marker);
                     bounds.extend(markerLocation);
-                } else {
-                    console.warn(`Could not map address: ${cleanAddress}`);
-                }
+                } 
 
-                // CAMERA ZOOM LOGIC
-                if (markersProcessed === donations.length) {
+                if (markersProcessed === activeDonations.length) {
                     if (mapMarkers.length === 1) {
-                        // Exactly 1 result (e.g., searched for "rice"): Zoom in to street level!
                         map.setCenter(mapMarkers[0].getPosition());
                         map.setZoom(16); 
                     } else if (mapMarkers.length > 1) {
-                        // Multiple results: Zoom out to fit all pins on screen
                         map.fitBounds(bounds);
-                        // Prevent the map from zooming in too close if all pins are right next to each other
                         if (map.getZoom() > 16) map.setZoom(16);
                     }
                 }
             });
         } else {
-            markersProcessed++; // Skip items without addresses safely
+            markersProcessed++; 
         }
     });
 }
-
 
