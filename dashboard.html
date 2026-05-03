@@ -455,6 +455,23 @@
     <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDzkYh8_wqFB4F0mCoKvTouAkyMrysL_Yc"></script>
 
     <!-- 2. Main Logic with 'defer' to ensure everything is ready -->
+    <div id="chat-modal" class="hidden" style="position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(15, 23, 42, 0.6); backdrop-filter: blur(4px); z-index: 1000; display: flex; justify-content: center; align-items: center;">
+        <div style="background: var(--bg-surface); width: 90%; max-width: 450px; border-radius: var(--radius-lg); display: flex; flex-direction: column; height: 500px; overflow: hidden; box-shadow: var(--shadow-hover); border: 1px solid var(--border-light);">
+            
+            <div style="background: var(--primary); color: white; padding: 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center;">
+                <h3 id="chat-header" style="font-size: 1.1rem; margin: 0; font-weight: 600;">Chat</h3>
+                <button onclick="closeChat()" style="background: none; border: none; color: white; font-size: 1.5rem; padding: 0; cursor: pointer; width: auto; box-shadow: none; font-weight: 300;">&times;</button>
+            </div>
+            
+            <div id="chat-messages" style="flex: 1; padding: 1.5rem; overflow-y: auto; display: flex; flex-direction: column; gap: 12px; background: var(--bg-body);">
+                </div>
+            
+            <form id="chat-form" style="padding: 1rem; border-top: 1px solid var(--border-light); display: flex; gap: 10px; background: var(--bg-surface);">
+                <input type="text" id="chat-input" placeholder="Type a message..." autocomplete="off" required style="flex: 1; margin: 0; padding: 0.75rem 1rem;">
+                <button type="submit" style="width: auto; padding: 0.75rem 1.5rem; border-radius: 99px;">Send</button>
+            </form>
+        </div>
+    </div>
     <script type="module" src="dashboard.js" defer></script>
 </body>
 </html>
