@@ -702,33 +702,95 @@ document.getElementById('donation-form').onsubmit = async (e) => {
 };
 
 // NGO: Load Available Food Feed
+// function loadAvailableFood() {
+//     const q = query(collection(db, "donations"), where("status", "==", "available"));
+//     onSnapshot(q, (snapshot) => {
+//         const feed = document.getElementById('available-feed');
+//         feed.innerHTML = '';
+        
+//         if(snapshot.empty) {
+//             feed.innerHTML = `<p style="color: var(--text-muted); grid-column: 1/-1;">No donations available at the moment. Please check back later.</p>`;
+//             return;
+//         }
+
+//         snapshot.forEach((docSnap) => {
+//             const item = docSnap.data();
+//             feed.innerHTML += `
+//                 <div class="data-card">
+//                     <img src="${item.image}" style="width:100%; height:160px; object-fit:cover; border-radius:8px; margin-bottom:12px;" alt="Food Image">
+//                     <span class="status-badge badge-available">Available</span>
+//                     <h4 class="card-title">${item.foodType}</h4>
+//                     <div class="card-detail"><strong>Quantity:</strong> <span>${item.quantity}</span></div>
+//                     <div class="card-detail"><strong>Expires:</strong> <span>${item.shelfLife}</span></div>
+//                     <div class="card-detail"><strong>Location:</strong> <span>${item.address}</span></div>
+//                     <div class="card-detail" style="margin-bottom: 0.5rem;"><strong>Donor:</strong> <span>${item.donorName}</span></div>
+//                     <button onclick="claimFood('${docSnap.id}')" style="margin-top: auto;">Claim for Pickup</button>
+//                 </div>`;
+//         });
+//     });
+// }
+// NEW: Global array to hold the real-time data
+let allAvailableDonations = [];
+
+// NGO: Fetch Data and Listen for Real-Time Changes
 function loadAvailableFood() {
     const q = query(collection(db, "donations"), where("status", "==", "available"));
     onSnapshot(q, (snapshot) => {
-        const feed = document.getElementById('available-feed');
-        feed.innerHTML = '';
+        allAvailableDonations = []; // Clear the array
         
-        if(snapshot.empty) {
-            feed.innerHTML = `<p style="color: var(--text-muted); grid-column: 1/-1;">No donations available at the moment. Please check back later.</p>`;
-            return;
-        }
-
         snapshot.forEach((docSnap) => {
-            const item = docSnap.data();
-            feed.innerHTML += `
-                <div class="data-card">
-                    <img src="${item.image}" style="width:100%; height:160px; object-fit:cover; border-radius:8px; margin-bottom:12px;" alt="Food Image">
-                    <span class="status-badge badge-available">Available</span>
-                    <h4 class="card-title">${item.foodType}</h4>
-                    <div class="card-detail"><strong>Quantity:</strong> <span>${item.quantity}</span></div>
-                    <div class="card-detail"><strong>Expires:</strong> <span>${item.shelfLife}</span></div>
-                    <div class="card-detail"><strong>Location:</strong> <span>${item.address}</span></div>
-                    <div class="card-detail" style="margin-bottom: 0.5rem;"><strong>Donor:</strong> <span>${item.donorName}</span></div>
-                    <button onclick="claimFood('${docSnap.id}')" style="margin-top: auto;">Claim for Pickup</button>
-                </div>`;
+            // Push the document ID and the data together into the array
+            allAvailableDonations.push({ id: docSnap.id, ...docSnap.data() });
         });
+        
+        applyFiltersAndRender(); // Draw the UI
     });
 }
+
+// NEW: Filter Logic
+function applyFiltersAndRender() {
+    const searchTerm = document.getElementById('search-food').value.toLowerCase();
+    const locationFilter = document.getElementById('filter-location').value.toLowerCase();
+
+    // Filter the array based on what the user typed/selected
+    const filteredData = allAvailableDonations.filter(item => {
+        const matchesSearch = item.foodType.toLowerCase().includes(searchTerm) || item.donorName.toLowerCase().includes(searchTerm);
+        const matchesLocation = locationFilter === 'all' || item.address.toLowerCase().includes(locationFilter);
+        
+        return matchesSearch && matchesLocation;
+    });
+
+    renderFeed(filteredData);
+}
+
+// NEW: Draw the UI based on filtered data
+function renderFeed(donations) {
+    const feed = document.getElementById('available-feed');
+    feed.innerHTML = '';
+    
+    if(donations.length === 0) {
+        feed.innerHTML = `<p style="color: var(--text-muted); grid-column: 1/-1;">No donations match your search criteria.</p>`;
+        return;
+    }
+
+    donations.forEach((item) => {
+        feed.innerHTML += `
+            <div class="data-card">
+                <img src="${item.image}" style="width:100%; height:160px; object-fit:cover; border-radius:8px; margin-bottom:12px;" alt="Food Image">
+                <span class="status-badge badge-available">Available</span>
+                <h4 class="card-title">${item.foodType}</h4>
+                <div class="card-detail"><strong>Quantity:</strong> <span>${item.quantity}</span></div>
+                <div class="card-detail"><strong>Expires:</strong> <span>${item.shelfLife}</span></div>
+                <div class="card-detail"><strong>Location:</strong> <span>${item.address}</span></div>
+                <div class="card-detail" style="margin-bottom: 0.5rem;"><strong>Donor:</strong> <span>${item.donorName}</span></div>
+                <button onclick="claimFood('${item.id}')" style="margin-top: auto;">Claim for Pickup</button>
+            </div>`;
+    });
+}
+
+// NEW: Listeners to detect when the NGO types or changes the dropdown
+document.getElementById('search-food').addEventListener('input', applyFiltersAndRender);
+document.getElementById('filter-location').addEventListener('change', applyFiltersAndRender);
 
 // NGO: Claiming System
 window.claimFood = async (id) => {
