@@ -1,7 +1,7 @@
---- Base Variables & Reset --- */
-:root {
-    --primary: #10b981; /* Modern Emerald Green */
-    --primary-dark: #059669;
+/* --- Base Variables & Reset --- */
+/* :root {
+    --primary: #10b981; /* Modern Emerald Green */ */
+    /* --primary-dark: #059669;
     --bg-light: #f3f4f6;
     --surface: #ffffff;
     --text-main: #1f2937;
@@ -17,10 +17,10 @@ body {
     background-color: var(--bg-light);
     color: var(--text-main);
     line-height: 1.5;
-}
+} */
 
 /* --- Authentication UI --- */
-.auth-container {
+/* .auth-container {
     max-width: 420px;
     margin: 80px auto;
     padding: 2.5rem;
@@ -47,10 +47,10 @@ input, select {
     background-color: #f9fafb;
 }
 
-input:focus, select:focus { outline: none; border-color: var(--primary); background-color: var(--surface); }
+input:focus, select:focus { outline: none; border-color: var(--primary); background-color: var(--surface); } */
 
 /* --- Buttons --- */
-button {
+/* button {
     width: 100%;
     padding: 0.75rem 1.5rem;
     background-color: var(--primary);
@@ -63,10 +63,10 @@ button {
     transition: all 0.2s ease;
 }
 
-button:hover { background-color: var(--primary-dark); transform: translateY(-1px); }
+button:hover { background-color: var(--primary-dark); transform: translateY(-1px); } */
 
 /* --- Dashboard Navigation --- */
-.navbar {
+/* .navbar {
     background: var(--surface);
     padding: 1rem 5%;
     display: flex;
@@ -93,10 +93,10 @@ button:hover { background-color: var(--primary-dark); transform: translateY(-1px
 }
 
 .btn-logout { width: auto; background-color: transparent; color: var(--text-muted); border: 1px solid var(--border); padding: 0.4rem 1rem; }
-.btn-logout:hover { background-color: var(--danger); color: white; border-color: var(--danger); }
+.btn-logout:hover { background-color: var(--danger); color: white; border-color: var(--danger); } */
 
 /* --- Dashboard Layout --- */
-.dashboard-main { max-width: 1200px; margin: 0 auto; padding: 2rem 5%; }
+/* .dashboard-main { max-width: 1200px; margin: 0 auto; padding: 2rem 5%; }
 
 .section-header { margin-bottom: 1.5rem; font-size: 1.25rem; font-weight: 600; color: var(--text-main); border-bottom: 2px solid var(--border); padding-bottom: 0.5rem; }
 
@@ -105,10 +105,10 @@ button:hover { background-color: var(--primary-dark); transform: translateY(-1px
     grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
     gap: 1.5rem;
     margin-bottom: 3rem;
-}
+} */
 
 /* --- Cards --- */
-.data-card {
+/* .data-card {
     background: var(--surface);
     border-radius: 12px;
     padding: 1.5rem;
@@ -125,10 +125,10 @@ button:hover { background-color: var(--primary-dark); transform: translateY(-1px
 .card-title { font-size: 1.2rem; font-weight: 600; color: var(--text-main); margin-bottom: 0.25rem; }
 
 .card-detail { font-size: 0.9rem; color: var(--text-muted); display: flex; align-items: flex-start; gap: 0.5rem; }
-.card-detail strong { color: var(--text-main); min-width: 70px; }
+.card-detail strong { color: var(--text-main); min-width: 70px; } */
 
 /* --- Badges --- */
-.status-badge {
+/* .status-badge {
     align-self: flex-start;
     padding: 0.25rem 0.75rem;
     border-radius: 9999px;
@@ -139,9 +139,309 @@ button:hover { background-color: var(--primary-dark); transform: translateY(-1px
 }
 
 .badge-available { background-color: #d1fae5; color: #065f46; }
-.badge-claimed { background-color: #fef3c7; color: #92400e; }
+.badge-claimed { background-color: #fef3c7; color: #92400e; } */
 
 /* /* --- Donor Form Specifics --- */
 /* .post-donation-card { background: var(--surface); padding: 2rem; border-radius: 12px; border: 1px solid var(--border); margin-bottom: 3rem; }
 .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
-@media (max-width: 600px) { .form-row { grid-template-columns: 1fr; } } 
+@media (max-width: 600px) { .form-row { grid-template-columns: 1fr; } }  */
+/* ==========================================
+   1. CSS VARIABLES & THEME SETUP
+   ========================================== */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+
+:root {
+    /* Color Palette */
+    --primary: #10b981;       /* Modern Emerald Green */
+    --primary-dark: #059669;
+    --secondary: #3b82f6;     /* Trustworthy Blue */
+    --danger: #ef4444;        /* Soft Red */
+    --warning: #f59e0b;       /* Amber */
+    
+    /* Backgrounds & Borders */
+    --bg-light: #f3f4f6;      /* Very light grey */
+    --surface: #ffffff;       /* Pure white for cards */
+    --border: #e5e7eb;
+    
+    /* Typography */
+    --text-main: #1f2937;     /* Dark Slate */
+    --text-muted: #6b7280;    /* Medium Grey */
+    
+    /* Shadows (Professional Elevation) */
+    --shadow-sm: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+    --shadow-md: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --shadow-hover: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -2px rgba(0, 0, 0, 0.05);
+}
+
+/* ==========================================
+   2. GLOBAL RESET & TYPOGRAPHY
+   ========================================== */
+* {
+    box-sizing: border-box;
+    margin: 0;
+    padding: 0;
+}
+
+body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    background-color: var(--bg-light);
+    color: var(--text-main);
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+}
+
+/* ==========================================
+   3. AUTHENTICATION UI (Login/Signup)
+   ========================================== */
+.auth-container {
+    max-width: 420px;
+    margin: 80px auto;
+    padding: 2.5rem;
+    background: var(--surface);
+    border-radius: 12px;
+    box-shadow: var(--shadow-md);
+    border: 1px solid var(--border);
+}
+
+.auth-container h2 {
+    text-align: center;
+    color: var(--text-main);
+    margin-bottom: 1.5rem;
+    font-weight: 700;
+}
+
+.form-group.hidden { 
+    display: none !important; 
+}
+
+/* ==========================================
+   4. NAVIGATION BAR
+   ========================================== */
+.navbar {
+    background: var(--surface);
+    padding: 1rem 5%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    box-shadow: var(--shadow-sm);
+    border-bottom: 1px solid var(--border);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+.navbar h2 {
+    color: var(--primary);
+    font-size: 1.5rem;
+    font-weight: 700;
+    letter-spacing: -0.5px;
+}
+
+.nav-controls {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+}
+
+.user-badge {
+    font-size: 0.9rem;
+    font-weight: 600;
+    color: var(--text-muted);
+    background: var(--bg-light);
+    padding: 0.4rem 1rem;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+}
+
+.btn-logout {
+    width: auto;
+    background-color: transparent;
+    color: var(--text-muted);
+    border: 1px solid var(--border);
+    padding: 0.5rem 1rem;
+}
+
+.btn-logout:hover {
+    background-color: #fff1f2;
+    color: var(--danger);
+    border-color: var(--danger);
+}
+
+/* ==========================================
+   5. DASHBOARD LAYOUT & HEADERS
+   ========================================== */
+.dashboard-main {
+    max-width: 1200px;
+    margin: 2rem auto;
+    padding: 0 5%;
+}
+
+.section-header {
+    margin-top: 2rem;
+    margin-bottom: 1.5rem;
+    font-size: 1.25rem;
+    font-weight: 600;
+    color: var(--text-main);
+    border-bottom: 2px solid var(--border);
+    padding-bottom: 0.5rem;
+}
+
+/* ==========================================
+   6. FORMS, INPUTS & BUTTONS
+   ========================================== */
+label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-main);
+}
+
+input, select {
+    width: 100%;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    font-size: 0.95rem;
+    transition: all 0.2s ease;
+    background-color: #fafafa;
+    color: var(--text-main);
+}
+
+/* Professional Glowing Focus State */
+input:focus, select:focus {
+    outline: none;
+    border-color: var(--primary);
+    box-shadow: 0 0 0 3px rgba(16, 185, 129, 0.15);
+    background-color: var(--surface);
+}
+
+button {
+    width: 100%;
+    padding: 0.75rem 1.5rem;
+    background-color: var(--primary);
+    border: none;
+    color: white;
+    font-size: 1rem;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+button:hover:not([disabled]) {
+    background-color: var(--primary-dark);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 6px -1px rgba(16, 185, 129, 0.3);
+}
+
+/* ==========================================
+   7. DONOR FORM GRID (Fixed & Responsive)
+   ========================================== */
+.post-donation-card {
+    background: var(--surface);
+    padding: 2rem;
+    border-radius: 12px;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-md);
+    margin-bottom: 3rem;
+}
+
+.form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 1.5rem;
+    margin-bottom: 1.5rem;
+}
+
+/* Mobile Responsiveness for Form */
+@media (max-width: 768px) {
+    .form-row {
+        grid-template-columns: 1fr;
+        gap: 1rem;
+    }
+}
+
+/* ==========================================
+   8. DATA CARDS & FEED GRID
+   ========================================== */
+.dashboard-grid {
+    display: grid;
+    /* Auto-fit makes it look perfect on mobile, tablet, and PC */
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 3rem;
+}
+
+.data-card {
+    background: var(--surface);
+    border-radius: 12px;
+    padding: 1.25rem;
+    border: 1px solid var(--border);
+    box-shadow: var(--shadow-sm);
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.data-card:hover {
+    box-shadow: var(--shadow-hover);
+    transform: translateY(-4px);
+}
+
+.card-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    color: var(--text-main);
+    margin-bottom: 0.25rem;
+}
+
+.card-detail {
+    font-size: 0.9rem;
+    color: var(--text-muted);
+    display: flex;
+    justify-content: space-between;
+}
+
+.card-detail strong {
+    color: var(--text-main);
+    font-weight: 600;
+}
+
+/* ==========================================
+   9. STATUS BADGES
+   ========================================== */
+.status-badge {
+    position: absolute;
+    top: 1.5rem;
+    right: 1.5rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 20px;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+}
+
+.badge-available {
+    background-color: #d1fae5;
+    color: #065f46;
+}
+
+.badge-claimed {
+    background-color: #fef3c7;
+    color: #92400e;
+}
+
+.badge-completed {
+    background-color: #e0e7ff;
+    color: #3730a3;
+}
+
+/* Helper */
+.hidden {
+    display: none !important;
+}
