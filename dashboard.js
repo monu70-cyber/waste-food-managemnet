@@ -990,6 +990,340 @@
 //         }
 //     });
 // }
+// import { auth, db, storage } from './firebase.js'; 
+// import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+// import { 
+//     collection, addDoc, query, where, onSnapshot, doc, getDoc, updateDoc, serverTimestamp, deleteDoc 
+// } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+// import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
+
+// const donorSection = document.getElementById('donor-section');
+// const ngoSection = document.getElementById('ngo-section');
+// const userDisplay = document.getElementById('user-display');
+
+// // 1. Crash-Proof User Auth State
+// onAuthStateChanged(auth, async (user) => {
+//     if (user) {
+//         try {
+//             const userDoc = await getDoc(doc(db, "users", user.uid));
+//             if (userDoc.exists()) {
+//                 const userData = userDoc.data();
+//                 userDisplay.innerText = `${userData.name} • ${userData.role.toUpperCase()}`;
+
+//                 if (userData.role === 'donor') {
+//                     donorSection.classList.remove('hidden');
+//                     loadDonorHistory(user.uid);
+//                 } else {
+//                     ngoSection.classList.remove('hidden');
+//                     loadAvailableFood();
+//                 }
+//             } else {
+//                 userDisplay.innerText = "Account Data Missing";
+//             }
+//         } catch (error) {
+//             userDisplay.innerText = "Database Error";
+//             console.error("Auth error:", error);
+//         }
+//     } else {
+//         window.location.href = 'index.html';
+//     }
+// });
+
+// // Donor: Submit Donation
+// document.getElementById('donation-form').onsubmit = async (e) => {
+//     e.preventDefault();
+//     const submitBtn = e.target.querySelector('button');
+//     submitBtn.innerText = "Uploading...";
+//     submitBtn.disabled = true;
+
+//     const file = document.getElementById('food-photo').files[0];
+//     let photoURL = "https://via.placeholder.com/300?text=No+Image+Available";
+
+//     try {
+//         if (file) {
+//             const storageRef = ref(storage, `food_images/${Date.now()}_${file.name}`);
+//             const snapshot = await uploadBytes(storageRef, file);
+//             photoURL = await getDownloadURL(snapshot.ref);
+//         }
+
+//         const foodData = {
+//             foodType: document.getElementById('food-type').value,
+//             quantity: document.getElementById('quantity').value,
+//             shelfLife: document.getElementById('shelf-life').value,
+//             address: document.getElementById('address').value,
+//             image: photoURL,
+//             donorId: auth.currentUser.uid,
+//             donorName: userDisplay.innerText.split(' •')[0],
+//             status: 'available',
+//             createdAt: serverTimestamp()
+//         };
+
+//         await addDoc(collection(db, "donations"), foodData);
+//         e.target.reset(); 
+//         alert("Donation posted successfully!");
+//     } catch (error) { 
+//         alert("Error: " + error.message); 
+//     } finally {
+//         submitBtn.innerText = "List Food Item";
+//         submitBtn.disabled = false;
+//     }
+// };
+
+// // NGO Logic: Filters and Real-time Feed
+// let allAvailableDonations = [];
+
+// function loadAvailableFood() {
+//     const q = query(collection(db, "donations"), where("status", "==", "available"));
+//     onSnapshot(q, (snapshot) => {
+//         allAvailableDonations = [];
+//         snapshot.forEach((docSnap) => {
+//             allAvailableDonations.push({ id: docSnap.id, ...docSnap.data() });
+//         });
+//         applyFiltersAndRender();
+//     });
+// }
+
+// // function applyFiltersAndRender() {
+// //     const searchTerm = document.getElementById('search-food').value.toLowerCase();
+// //     const locationFilter = document.getElementById('filter-location').value.toLowerCase();
+
+// //     const filteredData = allAvailableDonations.filter(item => {
+// //         const matchesSearch = item.foodType.toLowerCase().includes(searchTerm) || item.donorName.toLowerCase().includes(searchTerm);
+// //         const matchesLocation = locationFilter === 'all' || item.address.toLowerCase().includes(locationFilter);
+// //         return matchesSearch && matchesLocation;
+// //     });
+
+// //     renderFeed(filteredData);
+// //     updateMapMarkers(filteredData);     
+// // }
+// // 1. The Filter Function (Triggers the map update)
+// function applyFiltersAndRender() {
+//     const searchTerm = document.getElementById('search-food').value.toLowerCase();
+//     const locationFilter = document.getElementById('filter-location').value.toLowerCase();
+
+//     // Filter the data based on what the NGO typed
+//     const filteredData = allAvailableDonations.filter(item => {
+//         const matchesSearch = item.foodType.toLowerCase().includes(searchTerm) || item.donorName.toLowerCase().includes(searchTerm);
+//         const matchesLocation = locationFilter === 'all' || item.address.toLowerCase().includes(locationFilter);
+        
+//         return matchesSearch && matchesLocation;
+//     });
+
+//     // Update the text list
+//     renderFeed(filteredData);
+    
+//     // Update the Map with ONLY the filtered data
+//     updateMapMarkers(filteredData);     
+// }
+// // 2. The Smart Map Function (Handles zooming and pins)
+// function updateMapMarkers(donations) {
+//     if (!map) return; // Safety check
+
+//     const geocoder = new google.maps.Geocoder();
+//     const bounds = new google.maps.LatLngBounds(); // Used to calculate map zoom
+//     let markersProcessed = 0;
+
+//     // Clear old markers off the map before dropping new ones
+//     mapMarkers.forEach(marker => marker.setMap(null));
+//     mapMarkers = [];
+
+//     // If search returns nothing, reset map to default city view
+//     if (donations.length === 0) {
+//         map.setCenter({ lat: 26.8467, lng: 80.9462 }); // Lucknow Center
+//         map.setZoom(12);
+//         return;
+//     }
+
+//     // Loop through the filtered donations and drop pins
+//     donations.forEach(item => {
+//         if (item.address) {
+//             // Force location to Lucknow for better geocoding accuracy
+//             const cleanAddress = `${item.address}, Lucknow, Uttar Pradesh, India`;
+            
+//             geocoder.geocode({ address: cleanAddress }, (results, status) => {
+//                 markersProcessed++; // Keep track of how many we have processed
+
+//                 if (status === "OK" && results[0]) {
+//                     const markerLocation = results[0].geometry.location;
+                    
+//                     const marker = new google.maps.Marker({
+//                         map: map,
+//                         position: markerLocation,
+//                         title: item.foodType,
+//                         animation: google.maps.Animation.DROP,
+//                         icon: 'http://maps.google.com/mapfiles/ms/icons/red-dot.png'
+//                     });
+
+//                     // Build the popup window for the pin
+//                     const infoWindow = new google.maps.InfoWindow({
+//                         content: `
+//                             <div style="color: #333; font-family: sans-serif; padding: 5px;">
+//                                 <strong style="font-size: 16px;">${item.foodType}</strong><br>
+//                                 <span style="color: #666;">Quantity: ${item.quantity}</span><br>
+//                                 <small>${item.address}</small><br>
+//                                 <button onclick="claimFood('${item.id}')" style="background:#2ecc71; color:white; border:none; padding:8px 12px; border-radius:4px; margin-top:10px; cursor:pointer; width: 100%; font-weight: bold;">Claim for Pickup</button>
+//                             </div>`
+//                     });
+
+//                     marker.addListener('click', () => infoWindow.open(map, marker));
+//                     mapMarkers.push(marker);
+                    
+//                     // Add this pin's location to our map boundaries
+//                     bounds.extend(markerLocation);
+//                 } else {
+//                     console.warn(`Could not map address: ${cleanAddress}`);
+//                 }
+
+//                 // Once all pins have been checked, automatically adjust the camera
+//                 if (markersProcessed === donations.length) {
+//                     if (mapMarkers.length === 1) {
+//                         // Only 1 result? Zoom in close!
+//                         map.setCenter(mapMarkers[0].getPosition());
+//                         map.setZoom(15);
+//                     } else if (mapMarkers.length > 1) {
+//                         // Multiple results? Zoom out to fit all of them on screen!
+//                         map.fitBounds(bounds);
+//                     }
+//                 }
+//             });
+//         } else {
+//             markersProcessed++; // Skip items with no address safely
+//         }
+//     });
+// }
+// // function renderFeed(donations) {
+// //     const feed = document.getElementById('available-feed');
+// //     feed.innerHTML = '';
+// //     if(donations.length === 0) {
+// //         feed.innerHTML = `<p style="color: var(--text-muted); grid-column: 1/-1;">No donations match your search criteria.</p>`;
+// //         return;
+// //     }
+// //     donations.forEach((item) => {
+// //         feed.innerHTML += `
+// //             <div class="data-card">
+// //                 <img src="${item.image}" style="width:100%; height:160px; object-fit:cover; border-radius:8px; margin-bottom:12px;" alt="Food Image">
+// //                 <span class="status-badge badge-available">Available</span>
+// //                 <h4 class="card-title">${item.foodType}</h4>
+// //                 <div class="card-detail"><strong>Quantity:</strong> <span>${item.quantity}</span></div>
+// //                 <div class="card-detail"><strong>Expires:</strong> <span>${item.shelfLife}</span></div>
+// //                 <div class="card-detail"><strong>Location:</strong> <span>${item.address}</span></div>
+// //                 <div class="card-detail" style="margin-bottom: 0.5rem;"><strong>Donor:</strong> <span>${item.donorName}</span></div>
+// //                 <button onclick="claimFood('${item.id}')" style="margin-top: auto;">Claim for Pickup</button>
+// //             </div>`;
+// //     });
+// // }
+
+// // document.getElementById('search-food').addEventListener('input', applyFiltersAndRender);
+// // document.getElementById('filter-location').addEventListener('change', applyFiltersAndRender);
+
+// // NGO: Claiming System
+// window.claimFood = async (id) => {
+//     if(confirm("Are you sure you want to claim this food?")) {
+//         const donationRef = doc(db, "donations", id);
+//         await updateDoc(donationRef, {
+//             status: 'claimed',
+//             claimedBy: auth.currentUser.uid,
+//             claimedByName: userDisplay.innerText.split(' •')[0]
+//         });
+//     }
+// };
+
+// // Donor: History and Deletion
+// function loadDonorHistory(uid) {
+//     const q = query(collection(db, "donations"), where("donorId", "==", uid));
+//     onSnapshot(q, (snapshot) => {
+//         const history = document.getElementById('donor-history');
+//         history.innerHTML = '';
+//         snapshot.forEach((docSnap) => {
+//             const item = docSnap.data();
+//             const isAvailable = item.status === 'available';
+//             history.innerHTML += `
+//                 <div class="data-card">
+//                     <img src="${item.image}" style="width:100%; height:120px; object-fit:cover; border-radius:8px; margin-bottom:12px;" alt="Food Image">
+//                     <span class="status-badge ${isAvailable ? 'badge-available' : 'badge-claimed'}">${item.status}</span>
+//                     <h4 class="card-title">${item.foodType}</h4>
+//                     <div class="card-detail"><strong>Quantity:</strong> <span>${item.quantity}</span></div>
+//                     <div class="card-detail"><strong>Location:</strong> <span>${item.address}</span></div>
+//                     ${!isAvailable ? `<div class="card-detail" style="margin-top: 0.5rem; color: var(--primary-dark);"><strong>Claimed By:</strong> <span>${item.claimedByName}</span></div>` : ''}
+//                     ${isAvailable ? `<button onclick="deleteDonorItem('${docSnap.id}')" style="margin-top: 10px; width: 100%; background-color: #ef4444; color: white; border: none; padding: 0.5rem; border-radius: 6px; cursor: pointer; font-weight: bold;">Delete Listing</button>` : ''}
+//                 </div>`;
+//         });
+//     });
+// }
+
+// window.deleteDonorItem = async (id) => {
+//     if(confirm("Delete this listing permanently?")) {
+//         try { await deleteDoc(doc(db, "donations", id)); } 
+//         catch (error) { alert("Error: " + error.message); }
+//     }
+// };
+
+// // Logout Logic
+// document.getElementById('logout-btn').addEventListener('click', async () => {
+//     try {
+//         await signOut(auth);
+//         window.location.href = 'index.html';
+//     } catch (error) { console.error("Logout error:", error); }
+// });
+
+// // --- GOOGLE MAPS INTEGRATION ---
+// let map;
+// let mapMarkers = [];
+
+// function updateMapMarkers(donations) {
+//     if (!map) {
+//         map = new google.maps.Map(document.getElementById("map"), {
+//             center: { lat: 26.8467, lng: 80.9462 }, 
+//             zoom: 12,
+//             mapTypeControl: false,
+//             streetViewControl: false
+//         });
+//     }
+
+//     const geocoder = new google.maps.Geocoder();
+//     mapMarkers.forEach(marker => marker.setMap(null));
+//     mapMarkers = [];
+
+//     donations.forEach(item => {
+//         if (item.address) {
+//             const cleanAddress = `${item.address}, Lucknow, Uttar Pradesh, India`;
+//             geocoder.geocode({ address: cleanAddress }, (results, status) => {
+//                 if (status === "OK" && results[0]) {
+//                     const marker = new google.maps.Marker({
+//                         map: map,
+//                         position: results[0].geometry.location,
+//                         title: item.foodType,
+//                         animation: google.maps.Animation.DROP,
+//                         icon: 'http://maps.google.com/mapfiles/ms/icons/red-dot.png'
+//                     });
+
+//                     const infoWindow = new google.maps.InfoWindow({
+//                         content: `
+//                             <div style="color: #333; font-family: sans-serif; padding: 5px;">
+//                                 <strong>${item.foodType}</strong><br>
+//                                 <span>Qty: ${item.quantity}</span><br>
+//                                 <small>${item.address}</small><br>
+//                                 <button onclick="claimFood('${item.id}')" style="background:#2ecc71; color:white; border:none; padding:5px 10px; border-radius:4px; margin-top:8px; cursor:pointer;">Claim Now</button>
+//                             </div>`
+//                     });
+
+//                     marker.addListener('click', () => infoWindow.open(map, marker));
+//                     mapMarkers.push(marker);
+
+//                     if (donations.length === 1) {
+//                         map.setCenter(results[0].geometry.location);
+//                         map.setZoom(15);
+//                     }
+//                 }
+//             });
+//         }
+//     });
+
+//     if (donations.length > 1) {
+//         map.setZoom(12);
+//         map.setCenter({ lat: 26.8467, lng: 80.9462 });
+//     }
+// }
 import { auth, db, storage } from './firebase.js'; 
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { 
@@ -1069,7 +1403,9 @@ document.getElementById('donation-form').onsubmit = async (e) => {
     }
 };
 
-// NGO Logic: Filters and Real-time Feed
+// ==========================================
+// NGO: DATA, FILTERS, AND FEED RENDERING
+// ==========================================
 let allAvailableDonations = [];
 
 function loadAvailableFood() {
@@ -1083,20 +1419,6 @@ function loadAvailableFood() {
     });
 }
 
-// function applyFiltersAndRender() {
-//     const searchTerm = document.getElementById('search-food').value.toLowerCase();
-//     const locationFilter = document.getElementById('filter-location').value.toLowerCase();
-
-//     const filteredData = allAvailableDonations.filter(item => {
-//         const matchesSearch = item.foodType.toLowerCase().includes(searchTerm) || item.donorName.toLowerCase().includes(searchTerm);
-//         const matchesLocation = locationFilter === 'all' || item.address.toLowerCase().includes(locationFilter);
-//         return matchesSearch && matchesLocation;
-//     });
-
-//     renderFeed(filteredData);
-//     updateMapMarkers(filteredData);     
-// }
-// 1. The Filter Function (Triggers the map update)
 function applyFiltersAndRender() {
     const searchTerm = document.getElementById('search-food').value.toLowerCase();
     const locationFilter = document.getElementById('filter-location').value.toLowerCase();
@@ -1109,116 +1431,48 @@ function applyFiltersAndRender() {
         return matchesSearch && matchesLocation;
     });
 
-    // Update the text list
+    // Draw the UI Cards
     renderFeed(filteredData);
     
-    // Update the Map with ONLY the filtered data
+    // Draw the Map Pins
     updateMapMarkers(filteredData);     
 }
-// 2. The Smart Map Function (Handles zooming and pins)
-function updateMapMarkers(donations) {
-    if (!map) return; // Safety check
 
-    const geocoder = new google.maps.Geocoder();
-    const bounds = new google.maps.LatLngBounds(); // Used to calculate map zoom
-    let markersProcessed = 0;
-
-    // Clear old markers off the map before dropping new ones
-    mapMarkers.forEach(marker => marker.setMap(null));
-    mapMarkers = [];
-
-    // If search returns nothing, reset map to default city view
-    if (donations.length === 0) {
-        map.setCenter({ lat: 26.8467, lng: 80.9462 }); // Lucknow Center
-        map.setZoom(12);
+// Draw the HTML UI Cards (This was accidentally commented out before!)
+function renderFeed(donations) {
+    const feed = document.getElementById('available-feed');
+    feed.innerHTML = '';
+    
+    if(donations.length === 0) {
+        feed.innerHTML = `<p style="color: var(--text-muted); grid-column: 1/-1;">No donations match your search criteria.</p>`;
         return;
     }
-
-    // Loop through the filtered donations and drop pins
-    donations.forEach(item => {
-        if (item.address) {
-            // Force location to Lucknow for better geocoding accuracy
-            const cleanAddress = `${item.address}, Lucknow, Uttar Pradesh, India`;
-            
-            geocoder.geocode({ address: cleanAddress }, (results, status) => {
-                markersProcessed++; // Keep track of how many we have processed
-
-                if (status === "OK" && results[0]) {
-                    const markerLocation = results[0].geometry.location;
-                    
-                    const marker = new google.maps.Marker({
-                        map: map,
-                        position: markerLocation,
-                        title: item.foodType,
-                        animation: google.maps.Animation.DROP,
-                        icon: 'http://maps.google.com/mapfiles/ms/icons/red-dot.png'
-                    });
-
-                    // Build the popup window for the pin
-                    const infoWindow = new google.maps.InfoWindow({
-                        content: `
-                            <div style="color: #333; font-family: sans-serif; padding: 5px;">
-                                <strong style="font-size: 16px;">${item.foodType}</strong><br>
-                                <span style="color: #666;">Quantity: ${item.quantity}</span><br>
-                                <small>${item.address}</small><br>
-                                <button onclick="claimFood('${item.id}')" style="background:#2ecc71; color:white; border:none; padding:8px 12px; border-radius:4px; margin-top:10px; cursor:pointer; width: 100%; font-weight: bold;">Claim for Pickup</button>
-                            </div>`
-                    });
-
-                    marker.addListener('click', () => infoWindow.open(map, marker));
-                    mapMarkers.push(marker);
-                    
-                    // Add this pin's location to our map boundaries
-                    bounds.extend(markerLocation);
-                } else {
-                    console.warn(`Could not map address: ${cleanAddress}`);
-                }
-
-                // Once all pins have been checked, automatically adjust the camera
-                if (markersProcessed === donations.length) {
-                    if (mapMarkers.length === 1) {
-                        // Only 1 result? Zoom in close!
-                        map.setCenter(mapMarkers[0].getPosition());
-                        map.setZoom(15);
-                    } else if (mapMarkers.length > 1) {
-                        // Multiple results? Zoom out to fit all of them on screen!
-                        map.fitBounds(bounds);
-                    }
-                }
-            });
-        } else {
-            markersProcessed++; // Skip items with no address safely
-        }
+    
+    donations.forEach((item) => {
+        feed.innerHTML += `
+            <div class="data-card">
+                <img src="${item.image}" style="width:100%; height:160px; object-fit:cover; border-radius:8px; margin-bottom:12px;" alt="Food Image">
+                <span class="status-badge badge-available">Available</span>
+                <h4 class="card-title">${item.foodType}</h4>
+                <div class="card-detail"><strong>Quantity:</strong> <span>${item.quantity}</span></div>
+                <div class="card-detail"><strong>Expires:</strong> <span>${item.shelfLife}</span></div>
+                <div class="card-detail"><strong>Location:</strong> <span>${item.address}</span></div>
+                <div class="card-detail" style="margin-bottom: 0.5rem;"><strong>Donor:</strong> <span>${item.donorName}</span></div>
+                <button onclick="claimFood('${item.id}')" style="margin-top: auto; background-color: var(--primary); color: white; border: none; padding: 0.5rem; border-radius: 6px; cursor: pointer; font-weight: bold;">Claim for Pickup</button>
+            </div>`;
     });
 }
-// function renderFeed(donations) {
-//     const feed = document.getElementById('available-feed');
-//     feed.innerHTML = '';
-//     if(donations.length === 0) {
-//         feed.innerHTML = `<p style="color: var(--text-muted); grid-column: 1/-1;">No donations match your search criteria.</p>`;
-//         return;
-//     }
-//     donations.forEach((item) => {
-//         feed.innerHTML += `
-//             <div class="data-card">
-//                 <img src="${item.image}" style="width:100%; height:160px; object-fit:cover; border-radius:8px; margin-bottom:12px;" alt="Food Image">
-//                 <span class="status-badge badge-available">Available</span>
-//                 <h4 class="card-title">${item.foodType}</h4>
-//                 <div class="card-detail"><strong>Quantity:</strong> <span>${item.quantity}</span></div>
-//                 <div class="card-detail"><strong>Expires:</strong> <span>${item.shelfLife}</span></div>
-//                 <div class="card-detail"><strong>Location:</strong> <span>${item.address}</span></div>
-//                 <div class="card-detail" style="margin-bottom: 0.5rem;"><strong>Donor:</strong> <span>${item.donorName}</span></div>
-//                 <button onclick="claimFood('${item.id}')" style="margin-top: auto;">Claim for Pickup</button>
-//             </div>`;
-//     });
-// }
 
-// document.getElementById('search-food').addEventListener('input', applyFiltersAndRender);
-// document.getElementById('filter-location').addEventListener('change', applyFiltersAndRender);
+// Search Listeners (These were also accidentally commented out!)
+document.getElementById('search-food').addEventListener('input', applyFiltersAndRender);
+document.getElementById('filter-location').addEventListener('change', applyFiltersAndRender);
 
-// NGO: Claiming System
+
+// ==========================================
+// NGO: CLAIMING & DONOR MANAGEMENT
+// ==========================================
 window.claimFood = async (id) => {
-    if(confirm("Are you sure you want to claim this food?")) {
+    if(confirm("Are you sure you want to claim this food? You must coordinate pickup immediately.")) {
         const donationRef = doc(db, "donations", id);
         await updateDoc(donationRef, {
             status: 'claimed',
@@ -1228,12 +1482,18 @@ window.claimFood = async (id) => {
     }
 };
 
-// Donor: History and Deletion
+// Donor: View History
 function loadDonorHistory(uid) {
     const q = query(collection(db, "donations"), where("donorId", "==", uid));
     onSnapshot(q, (snapshot) => {
         const history = document.getElementById('donor-history');
         history.innerHTML = '';
+        
+        if(snapshot.empty) {
+            history.innerHTML = `<p style="color: var(--text-muted); grid-column: 1/-1;">You haven't posted any donations yet.</p>`;
+            return;
+        }
+
         snapshot.forEach((docSnap) => {
             const item = docSnap.data();
             const isAvailable = item.status === 'available';
@@ -1266,11 +1526,19 @@ document.getElementById('logout-btn').addEventListener('click', async () => {
     } catch (error) { console.error("Logout error:", error); }
 });
 
-// --- GOOGLE MAPS INTEGRATION ---
+// ==========================================
+// SMART GOOGLE MAPS INTEGRATION
+// ==========================================
 let map;
 let mapMarkers = [];
 
 function updateMapMarkers(donations) {
+    // FAIL-SAFE: If Google Maps hasn't loaded yet, try again in 500ms instead of crashing.
+    if (typeof google === 'undefined') {
+        setTimeout(() => updateMapMarkers(donations), 500);
+        return;
+    }
+
     if (!map) {
         map = new google.maps.Map(document.getElementById("map"), {
             center: { lat: 26.8467, lng: 80.9462 }, 
@@ -1281,17 +1549,32 @@ function updateMapMarkers(donations) {
     }
 
     const geocoder = new google.maps.Geocoder();
+    const bounds = new google.maps.LatLngBounds(); 
+    let markersProcessed = 0;
+
+    // Clear old markers
     mapMarkers.forEach(marker => marker.setMap(null));
     mapMarkers = [];
+
+    if (donations.length === 0) {
+        map.setCenter({ lat: 26.8467, lng: 80.9462 }); 
+        map.setZoom(12);
+        return;
+    }
 
     donations.forEach(item => {
         if (item.address) {
             const cleanAddress = `${item.address}, Lucknow, Uttar Pradesh, India`;
+            
             geocoder.geocode({ address: cleanAddress }, (results, status) => {
+                markersProcessed++;
+
                 if (status === "OK" && results[0]) {
+                    const markerLocation = results[0].geometry.location;
+                    
                     const marker = new google.maps.Marker({
                         map: map,
-                        position: results[0].geometry.location,
+                        position: markerLocation,
                         title: item.foodType,
                         animation: google.maps.Animation.DROP,
                         icon: 'http://maps.google.com/mapfiles/ms/icons/red-dot.png'
@@ -1300,28 +1583,31 @@ function updateMapMarkers(donations) {
                     const infoWindow = new google.maps.InfoWindow({
                         content: `
                             <div style="color: #333; font-family: sans-serif; padding: 5px;">
-                                <strong>${item.foodType}</strong><br>
-                                <span>Qty: ${item.quantity}</span><br>
+                                <strong style="font-size: 16px;">${item.foodType}</strong><br>
+                                <span style="color: #666;">Quantity: ${item.quantity}</span><br>
                                 <small>${item.address}</small><br>
-                                <button onclick="claimFood('${item.id}')" style="background:#2ecc71; color:white; border:none; padding:5px 10px; border-radius:4px; margin-top:8px; cursor:pointer;">Claim Now</button>
+                                <button onclick="claimFood('${item.id}')" style="background:#2ecc71; color:white; border:none; padding:8px 12px; border-radius:4px; margin-top:10px; cursor:pointer; width: 100%; font-weight: bold;">Claim</button>
                             </div>`
                     });
 
                     marker.addListener('click', () => infoWindow.open(map, marker));
                     mapMarkers.push(marker);
+                    bounds.extend(markerLocation);
+                }
 
-                    if (donations.length === 1) {
-                        map.setCenter(results[0].geometry.location);
+                // Auto-zoom map to fit all pins
+                if (markersProcessed === donations.length) {
+                    if (mapMarkers.length === 1) {
+                        map.setCenter(mapMarkers[0].getPosition());
                         map.setZoom(15);
+                    } else if (mapMarkers.length > 1) {
+                        map.fitBounds(bounds);
                     }
                 }
             });
+        } else {
+            markersProcessed++;
         }
     });
-
-    if (donations.length > 1) {
-        map.setZoom(12);
-        map.setCenter({ lat: 26.8467, lng: 80.9462 });
-    }
 }
 
