@@ -160,6 +160,90 @@
 </body>
 </html> --> --> --> --> --> --> -->
 
+<!-- <!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - FoodShare</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header class="navbar">
+        <h2>FoodShare</h2>
+        <div class="nav-controls">
+            <span class="user-badge" id="user-display">Loading...</span>
+            <button id="logout-btn" class="btn-logout">Logout</button>
+        </div>
+    </header>
+
+    <main class="dashboard-main">
+        
+        <!-- ================= DONOR WORKSPACE ================= -->
+        <!-- <div id="donor-section" class="hidden">
+            <h3 class="section-header">Post a New Donation</h3>
+            <div class="post-donation-card">
+                <form id="donation-form">
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Food Item</label>
+                            <input type="text" id="food-type" placeholder="e.g., 50 Servings of Rice & Curry" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Quantity</label>
+                            <input type="text" id="quantity" placeholder="e.g., 10 Kgs / 50 Packets" required>
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label>Safe to consume for (Shelf Life)</label>
+                            <input type="text" id="shelf-life" placeholder="e.g., Next 4 hours" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Pickup Location</label>
+                            <input type="text" id="address" placeholder="Complete address for pickup" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Upload Food Photo</label>
+                            <input type="file" id="food-photo" accept="image/*">
+                        </div>
+                    </div>
+                    <button type="submit" style="margin-top: 0.5rem;">List Food Item</button>
+                </form>
+            </div>
+
+            <h3 class="section-header">My Donation History</h3>
+            <div id="donor-history" class="dashboard-grid">
+                <!-- Donor history will load here -->
+            <!-- </div>
+        </div>
+
+        <!-- ================= NGO WORKSPACE ================= -->
+        <!-- <div id="ngo-section" class="hidden">
+            <h3 class="section-header">Available Food in Your Area</h3>
+            <div style="display: flex; gap: 15px; margin-bottom: 20px;">
+                <input type="text" id="search-food" placeholder="🔍 Search food (e.g., Rice, Curry)..." style="flex: 2; padding: 10px; border: 1px solid #ccc; border-radius: 6px;">
+                <select id="filter-location" style="flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 6px;">
+                    <option value="all">All Locations</option>
+                    <option value="lucknow">Lucknow</option>
+                    <option value="kanpur">Kanpur</option>
+                    <option value="para">Para</option>
+                </select>
+            </div>
+            <div id="available-feed" class="dashboard-grid">
+                 -->
+                <!-- NGO feed will load here -->
+            <!-- </div>
+        </div>
+
+    </main>
+
+    <!-- Container for Real-Time Toast Notifications -->
+    <!-- <div id="toast-container"></div>
+
+    <script type="module" src="dashboard.js"></script>
+</body>
+</html> --> --> --> --> -->
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -221,6 +305,8 @@
         <!-- ================= NGO WORKSPACE ================= -->
         <div id="ngo-section" class="hidden">
             <h3 class="section-header">Available Food in Your Area</h3>
+            
+            <!-- Search and Filter Bar -->
             <div style="display: flex; gap: 15px; margin-bottom: 20px;">
                 <input type="text" id="search-food" placeholder="🔍 Search food (e.g., Rice, Curry)..." style="flex: 2; padding: 10px; border: 1px solid #ccc; border-radius: 6px;">
                 <select id="filter-location" style="flex: 1; padding: 10px; border: 1px solid #ccc; border-radius: 6px;">
@@ -230,8 +316,13 @@
                     <option value="para">Para</option>
                 </select>
             </div>
+
+            <!-- NEW: The Google Map Container -->
+            <div id="map" style="width: 100%; height: 400px; border-radius: 8px; margin-bottom: 20px; background: #e5e5e5; display: flex; align-items: center; justify-content: center; color: #888;">
+                Map will load here...
+            </div>
+
             <div id="available-feed" class="dashboard-grid">
-                
                 <!-- NGO feed will load here -->
             </div>
         </div>
@@ -240,6 +331,9 @@
 
     <!-- Container for Real-Time Toast Notifications -->
     <div id="toast-container"></div>
+
+    <!-- NEW: Google Maps API Script (Remember to replace YOUR_API_KEY later!) -->
+    <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY"></script>
 
     <script type="module" src="dashboard.js"></script>
 </body>
