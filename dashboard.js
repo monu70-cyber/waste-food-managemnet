@@ -2633,21 +2633,49 @@ window.closeChat = () => {
 };
 
 // Send a message
-document.getElementById('chat-form').onsubmit = async (e) => {
-    e.preventDefault();
+// document.getElementById('chat-form').onsubmit = async (e) => {
+//     e.preventDefault();
+//     const input = document.getElementById('chat-input');
+//     const text = input.value.trim();
+//     if (!text || !currentChatDonationId) return;
+
+//     input.value = ''; // Clear input instantly for UI speed
+    
+//     await addDoc(collection(db, "messages"), {
+//         donationId: currentChatDonationId,
+//         text: text,
+//         senderId: auth.currentUser.uid,
+//         senderName: userDisplay.innerText.split(' •')[0],
+//         timestamp: serverTimestamp()
+//     });
+// };
+// ==========================================
+// BULLETPROOF SEND MESSAGE LOGIC
+// ==========================================
+window.sendChatMessage = async () => {
     const input = document.getElementById('chat-input');
     const text = input.value.trim();
+
+    // Prevent empty messages or sending without a chat open
     if (!text || !currentChatDonationId) return;
 
-    input.value = ''; // Clear input instantly for UI speed
-    
-    await addDoc(collection(db, "messages"), {
-        donationId: currentChatDonationId,
-        text: text,
-        senderId: auth.currentUser.uid,
-        senderName: userDisplay.innerText.split(' •')[0],
-        timestamp: serverTimestamp()
-    });
+    try {
+        await addDoc(collection(db, "messages"), {
+            donationId: currentChatDonationId,
+            text: text,
+            senderId: auth.currentUser.uid,
+            senderName: userDisplay.innerText.split(' •')[0] || "User",
+            timestamp: serverTimestamp()
+        });
+        
+        // If successful, clear the text box
+        input.value = ''; 
+        
+    } catch (err) {
+        // IF FIREBASE BLOCKS IT, THIS POPUP WILL TELL US WHY!
+        console.error("Message failed to send:", err);
+        alert("🚨 ERROR SENDING MESSAGE 🚨\n\n" + err.message + "\n\nDid you update your Firestore Rules?");
+    }
 };
 
 // Logout Logic
