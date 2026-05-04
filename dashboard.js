@@ -2292,6 +2292,473 @@
 //         }
 //     });
 // }
+// import { auth, db, storage } from './firebase.js'; 
+// import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+// import { 
+//     collection, addDoc, query, where, onSnapshot, doc, getDoc, updateDoc, serverTimestamp, deleteDoc 
+// } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+// import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
+
+// const donorSection = document.getElementById('donor-section');
+// const ngoSection = document.getElementById('ngo-section');
+// const userDisplay = document.getElementById('user-display');
+
+// // 1. Crash-Proof User Auth State
+// onAuthStateChanged(auth, async (user) => {
+//     if (user) {
+//         try {
+//             const userDoc = await getDoc(doc(db, "users", user.uid));
+//             if (userDoc.exists()) {
+//                 const userData = userDoc.data();
+//                 userDisplay.innerText = `${userData.name} • ${userData.role.toUpperCase()}`;
+
+//                 if (userData.role === 'donor') {
+//                     donorSection.classList.remove('hidden');
+//                     loadDonorHistory(user.uid);
+//                 } else {
+//                     ngoSection.classList.remove('hidden');
+//                     loadAvailableFood();
+//                     loadNGOClaims(user.uid); 
+//                 }
+//             }
+//         } catch (error) { console.error("Auth error:", error); }
+//     } else {
+//         window.location.href = 'index.html';
+//     }
+// });
+
+// // Photo Preview Logic
+// document.getElementById('food-photo').addEventListener('change', function(e) {
+//     const file = e.target.files[0];
+//     if (file) {
+//         const reader = new FileReader();
+//         reader.onload = function(e) {
+//             const preview = document.getElementById('photo-preview');
+//             preview.src = e.target.result;
+//             preview.style.display = 'block';
+//         }
+//         reader.readAsDataURL(file);
+//     }
+// });
+
+// // Donor: Submit Donation
+// document.getElementById('donation-form').onsubmit = async (e) => {
+//     e.preventDefault();
+//     const submitBtn = e.target.querySelector('button');
+//     submitBtn.innerText = "Uploading...";
+//     submitBtn.disabled = true;
+
+//     const file = document.getElementById('food-photo').files[0];
+//     let photoURL = "https://via.placeholder.com/300?text=No+Image+Available";
+//     const hoursValid = parseInt(document.getElementById('shelf-life').value);
+//     const expiryTimestamp = Date.now() + (hoursValid * 60 * 60 * 1000);
+
+//     try {
+//         if (file) {
+//             const storageRef = ref(storage, `food_images/${Date.now()}_${file.name}`);
+//             const snapshot = await uploadBytes(storageRef, file);
+//             photoURL = await getDownloadURL(snapshot.ref);
+//         }
+
+//         const foodData = {
+//             foodType: document.getElementById('food-type').value,
+//             quantity: document.getElementById('quantity').value + ' ' + document.getElementById('quantity-unit').value,
+//             shelfLifeHours: hoursValid,
+//             expiryTime: expiryTimestamp, 
+//             address: document.getElementById('address').value,
+//             image: photoURL,
+//             donorId: auth.currentUser.uid,
+//             donorName: userDisplay.innerText.split(' •')[0],
+//             status: 'available', 
+//             createdAt: serverTimestamp()
+//         };
+
+//         await addDoc(collection(db, "donations"), foodData);
+//         e.target.reset(); 
+//         document.getElementById('photo-preview').style.display = 'none';
+//         alert("Donation posted successfully!");
+//     } catch (error) { 
+//         alert("Error: " + error.message); 
+//     } finally {
+//         submitBtn.innerText = "List Food Item";
+//         submitBtn.disabled = false;
+//     }
+// };
+
+// // ==========================================
+// // NGO: DATA, FILTERS, AND FEED RENDERING
+// // ==========================================
+// let allAvailableDonations = [];
+
+// function loadAvailableFood() {
+//     const q = query(collection(db, "donations"), where("status", "==", "available"));
+//     onSnapshot(q, (snapshot) => {
+//         allAvailableDonations = [];
+//         snapshot.forEach((docSnap) => { allAvailableDonations.push({ id: docSnap.id, ...docSnap.data() }); });
+//         applyFiltersAndRender();
+//     });
+// }
+
+// function applyFiltersAndRender() {
+//     const searchTerm = document.getElementById('search-food').value.toLowerCase();
+//     const locationFilter = document.getElementById('filter-location').value.toLowerCase();
+
+//     const filteredData = allAvailableDonations.filter(item => {
+//         const matchesSearch = item.foodType.toLowerCase().includes(searchTerm) || item.donorName.toLowerCase().includes(searchTerm);
+//         const matchesLocation = locationFilter === 'all' || item.address.toLowerCase().includes(locationFilter);
+//         return matchesSearch && matchesLocation;
+//     });
+
+//     renderFeed(filteredData);
+//     updateMapMarkers(filteredData);     
+// }
+
+// function renderFeed(donations) {
+//     const feed = document.getElementById('available-feed');
+//     feed.innerHTML = '';
+    
+//     if(donations.length === 0) {
+//         feed.innerHTML = `<p style="color: var(--text-muted); grid-column: 1/-1;">No donations match your search criteria.</p>`;
+//         return;
+//     }
+    
+//     donations.forEach((item) => {
+//         const hoursLeft = (item.expiryTime - Date.now()) / (1000 * 60 * 60);
+//         let expiryAlert = '';
+//         if (hoursLeft <= 0) {
+//             expiryAlert = `<span style="color: var(--danger); font-weight: bold; font-size: 13px;">⚠️ EXPIRED</span>`;
+//         } else if (hoursLeft <= 2) { 
+//             expiryAlert = `<span style="color: var(--warning); font-weight: bold; font-size: 13px;">⏳ Expiring Soon!</span>`;
+//         } else {
+//             expiryAlert = `<span style="color: var(--success); font-weight: bold; font-size: 13px;">Valid for ${Math.round(hoursLeft)} hr(s)</span>`;
+//         }
+
+//         feed.innerHTML += `
+//             <div class="data-card" style="${hoursLeft <= 0 ? 'opacity: 0.6;' : ''}">
+//                 <img src="${item.image}" style="width:100%; height:160px; object-fit:cover; border-radius:var(--radius-md); margin-bottom:12px;">
+//                 <span class="status-badge badge-available">Available</span>
+//                 <h4 class="card-title">${item.foodType}</h4>
+//                 <div class="card-detail"><strong>Quantity:</strong> <span>${item.quantity}</span></div>
+//                 <div class="card-detail"><strong>Status:</strong> ${expiryAlert}</div>
+//                 <div class="card-detail"><strong>Location:</strong> <span>${item.address}</span></div>
+//                 <div class="card-detail" style="margin-bottom: 0.5rem;"><strong>Donor:</strong> <span>${item.donorName}</span></div>
+                
+//                 ${hoursLeft > 0 ? `<button onclick="claimFood('${item.id}')" style="margin-top: auto;">Claim for Pickup</button>` : `<button disabled style="margin-top: auto;">Food Expired</button>`}
+//             </div>`;
+//     });
+// }
+
+// document.getElementById('search-food').addEventListener('input', applyFiltersAndRender);
+// document.getElementById('filter-location').addEventListener('change', applyFiltersAndRender);
+
+// // ==========================================
+// // NGO: CLAIMING & COMPLETING LOGIC
+// // ==========================================
+// window.claimFood = async (id) => {
+//     if(confirm("Claim this food? You must coordinate pickup immediately.")) {
+//         const donationRef = doc(db, "donations", id);
+//         await updateDoc(donationRef, {
+//             status: 'picked_up', 
+//             claimedBy: auth.currentUser.uid,
+//             claimedByName: userDisplay.innerText.split(' •')[0]
+//         });
+//     }
+// };
+
+// window.completeDonation = async (id) => {
+//     if(confirm("Mark as Distributed/Completed? This removes it from your active list.")) {
+//         await updateDoc(doc(db, "donations", id), { status: 'completed' });
+//     }
+// };
+
+// // Load NGO's Active Pickups (Added Maps & Chat features)
+// function loadNGOClaims(uid) {
+//     const q = query(collection(db, "donations"), where("claimedBy", "==", uid), where("status", "==", "picked_up"));
+//     onSnapshot(q, (snapshot) => {
+//         const claimsBox = document.getElementById('ngo-claims');
+//         const claimsHeader = document.getElementById('my-claims-header');
+//         claimsBox.innerHTML = '';
+        
+//         if(snapshot.empty) {
+//             claimsHeader.style.display = 'none';
+//             return;
+//         }
+
+//         claimsHeader.style.display = 'block'; 
+//         snapshot.forEach((docSnap) => {
+//             const item = docSnap.data();
+            
+//             // Generate Google Maps Directions URL
+//             const mapUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(item.address + ', Lucknow, Uttar Pradesh, India')}`;
+
+//             claimsBox.innerHTML += `
+//                 <div class="data-card" style="border: 2px solid var(--primary);">
+//                     <h4 class="card-title">You are picking up: ${item.foodType}</h4>
+//                     <div class="card-detail"><strong>From:</strong> <span>${item.address}</span></div>
+//                     <div class="card-detail"><strong>Donor:</strong> <span>${item.donorName}</span></div>
+                    
+//                     <div style="display: flex; gap: 10px; margin-top: 15px;">
+//                         <button onclick="openChat('${docSnap.id}', '${item.donorName}')" style="flex: 1; background-color: var(--secondary); color: white; padding: 0.5rem; border-radius: 99px;">💬 Chat</button>
+//                         <a href="${mapUrl}" target="_blank" style="flex: 1; text-align: center; background-color: var(--info); color: white; padding: 0.5rem; border-radius: 99px; text-decoration: none; font-weight: bold; display: flex; align-items: center; justify-content: center; transition: 0.2s;">📍 Navigate</a>
+//                     </div>
+                    
+//                     <button onclick="completeDonation('${docSnap.id}')" style="margin-top: 10px; width: 100%; background-color: var(--success); color: white; border-radius: 99px;">✅ Mark as Completed</button>
+//                 </div>`;
+//         });
+//     });
+// }
+
+// // ==========================================
+// // DONOR: HISTORY & BADGES
+// // ==========================================
+// function loadDonorHistory(uid) {
+//     const q = query(collection(db, "donations"), where("donorId", "==", uid));
+//     onSnapshot(q, (snapshot) => {
+//         const history = document.getElementById('donor-history');
+//         history.innerHTML = '';
+        
+//         const totalDonations = snapshot.size;
+//         let badge = '🥉 Bronze Donor';
+//         let badgeColor = '#cd7f32'; 
+//         let nextTier = 5;
+        
+//         if (totalDonations >= 15) { 
+//             badge = '🏆 Gold Donor'; 
+//             badgeColor = '#f1c40f'; 
+//             nextTier = totalDonations; 
+//         } else if (totalDonations >= 5) { 
+//             badge = '🥈 Silver Donor'; 
+//             badgeColor = '#94A3B8'; 
+//             nextTier = 15; 
+//         }
+
+//         const progressPercent = Math.min((totalDonations / nextTier) * 100, 100);
+        
+//         document.getElementById('donor-badge-display').innerHTML = `
+//             <div style="background: white; border-left: 6px solid ${badgeColor}; padding: 1.5rem; border-radius: var(--radius-lg); margin-bottom: 25px; box-shadow: var(--shadow-sm);">
+//                 <h4 style="margin:0 0 10px 0; color: var(--text-main); font-size: 1.2rem;">Your Impact Level: <span style="color: ${badgeColor};">${badge}</span></h4>
+//                 <div style="background: var(--bg-body); border-radius: 10px; height: 12px; width: 100%; overflow: hidden;">
+//                     <div style="background: ${badgeColor}; height: 12px; width: ${progressPercent}%; transition: width 1s ease-in-out;"></div>
+//                 </div>
+//                 <small style="color:var(--text-muted); display: block; margin-top: 10px; font-weight: 600;">You've made ${totalDonations} donations! ${totalDonations < 15 ? `(Next tier at ${nextTier})` : 'You reached the top tier!'}</small>
+//             </div>
+//         `;
+
+//         if(snapshot.empty) {
+//             history.innerHTML = `<p style="color: var(--text-muted); grid-column: 1/-1;">You haven't posted any donations yet.</p>`;
+//             return;
+//         }
+
+//         snapshot.forEach((docSnap) => {
+//             const item = docSnap.data();
+//             let statusText = 'Pending Pickup';
+//             let badgeClass = 'badge-available';
+//             if (item.status === 'picked_up') { statusText = 'Picked Up'; badgeClass = 'badge-claimed'; }
+//             if (item.status === 'completed') { statusText = 'Completed'; badgeClass = 'badge-completed'; } 
+
+//             let actionButtons = '';
+//             if (item.status === 'available') {
+//                 actionButtons = `<button onclick="deleteDonorItem('${docSnap.id}')" style="margin-top: 10px; background-color: var(--danger); border-radius: 99px;">Delete Listing</button>`;
+//             } else if (item.status === 'picked_up') {
+//                 // Add Chat button for donor to speak to NGO
+//                 actionButtons = `<button onclick="openChat('${docSnap.id}', '${item.claimedByName}')" style="margin-top: 10px; background-color: var(--secondary); border-radius: 99px;">💬 Chat with NGO</button>`;
+//             }
+
+//             history.innerHTML += `
+//                 <div class="data-card">
+//                     <img src="${item.image}" style="width:100%; height:120px; object-fit:cover; border-radius:var(--radius-md); margin-bottom:12px;">
+//                     <span class="status-badge ${badgeClass}">${statusText}</span>
+//                     <h4 class="card-title">${item.foodType}</h4>
+//                     <div class="card-detail"><strong>Quantity:</strong> <span>${item.quantity}</span></div>
+//                     <div class="card-detail"><strong>Location:</strong> <span>${item.address}</span></div>
+//                     ${item.status !== 'available' ? `<div class="card-detail" style="margin-top: 0.5rem; color: var(--primary);"><strong>Handled By:</strong> <span>${item.claimedByName}</span></div>` : ''}
+//                     ${actionButtons}
+//                 </div>`;
+//         });
+//     });
+// }
+
+// window.deleteDonorItem = async (id) => {
+//     if(confirm("Delete this listing permanently?")) {
+//         await deleteDoc(doc(db, "donations", id));
+//     }
+// };
+
+// // ==========================================
+// // REAL-TIME IN-APP CHAT LOGIC
+// // ==========================================
+// let currentChatDonationId = null;
+// let unsubscribeChat = null;
+
+// window.openChat = (donationId, otherPartyName) => {
+//     currentChatDonationId = donationId;
+//     document.getElementById('chat-header').innerText = "Chat with " + otherPartyName;
+//     document.getElementById('chat-modal').classList.remove('hidden');
+    
+//     // Listen for messages linked to this specific donation
+//     const q = query(collection(db, "messages"), where("donationId", "==", donationId));
+    
+//     unsubscribeChat = onSnapshot(q, (snapshot) => {
+//         const chatBox = document.getElementById('chat-messages');
+//         chatBox.innerHTML = '';
+        
+//         // Extract and sort messages by time so they appear in order
+//         let messages = [];
+//         snapshot.forEach(docSnap => messages.push(docSnap.data()));
+//         messages.sort((a, b) => (a.timestamp?.toMillis() || 0) - (b.timestamp?.toMillis() || 0));
+
+//         if (messages.length === 0) {
+//             chatBox.innerHTML = `<p style="text-align:center; color:var(--text-muted); margin-top:20px;">Send a message to coordinate pickup!</p>`;
+//         }
+
+//         messages.forEach(msg => {
+//             const isMe = msg.senderId === auth.currentUser.uid;
+//             chatBox.innerHTML += `
+//                 <div style="align-self: ${isMe ? 'flex-end' : 'flex-start'}; background: ${isMe ? 'var(--primary)' : 'white'}; color: ${isMe ? 'white' : 'var(--text-main)'}; padding: 10px 14px; border-radius: 16px; border-bottom-${isMe ? 'right' : 'left'}-radius: 4px; max-width: 85%; box-shadow: var(--shadow-sm); border: 1px solid ${isMe ? 'var(--primary)' : 'var(--border-light)'};">
+//                     <span style="font-size: 0.75rem; font-weight: 700; display: block; margin-bottom: 4px; opacity: 0.8;">${msg.senderName}</span>
+//                     <span style="font-size: 0.95rem;">${msg.text}</span>
+//                 </div>
+//             `;
+//         });
+        
+//         // Auto-scroll to latest message
+//         chatBox.scrollTop = chatBox.scrollHeight;
+//     });
+// };
+
+// window.closeChat = () => {
+//     document.getElementById('chat-modal').classList.add('hidden');
+//     if (unsubscribeChat) unsubscribeChat(); // Stop listening when closed
+//     currentChatDonationId = null;
+// };
+
+// // Send a message
+// // document.getElementById('chat-form').onsubmit = async (e) => {
+// //     e.preventDefault();
+// //     const input = document.getElementById('chat-input');
+// //     const text = input.value.trim();
+// //     if (!text || !currentChatDonationId) return;
+
+// //     input.value = ''; // Clear input instantly for UI speed
+    
+// //     await addDoc(collection(db, "messages"), {
+// //         donationId: currentChatDonationId,
+// //         text: text,
+// //         senderId: auth.currentUser.uid,
+// //         senderName: userDisplay.innerText.split(' •')[0],
+// //         timestamp: serverTimestamp()
+// //     });
+// // };
+// // ==========================================
+// // BULLETPROOF SEND MESSAGE LOGIC
+// // ==========================================
+// window.sendChatMessage = async () => {
+//     const input = document.getElementById('chat-input');
+//     const text = input.value.trim();
+
+//     // Prevent empty messages or sending without a chat open
+//     if (!text || !currentChatDonationId) return;
+
+//     try {
+//         await addDoc(collection(db, "messages"), {
+//             donationId: currentChatDonationId,
+//             text: text,
+//             senderId: auth.currentUser.uid,
+//             senderName: userDisplay.innerText.split(' •')[0] || "User",
+//             timestamp: serverTimestamp()
+//         });
+        
+//         // If successful, clear the text box
+//         input.value = ''; 
+        
+//     } catch (err) {
+//         // IF FIREBASE BLOCKS IT, THIS POPUP WILL TELL US WHY!
+//         console.error("Message failed to send:", err);
+//         alert("🚨 ERROR SENDING MESSAGE 🚨\n\n" + err.message + "\n\nDid you update your Firestore Rules?");
+//     }
+// };
+
+// // Logout Logic
+// document.getElementById('logout-btn').addEventListener('click', async () => {
+//     await signOut(auth);
+//     window.location.href = 'index.html';
+// });
+
+// // ==========================================
+// // SMART GOOGLE MAPS INTEGRATION
+// // ==========================================
+// let map;
+// let mapMarkers = [];
+
+// function updateMapMarkers(donations) {
+//     if (typeof google === 'undefined') {
+//         setTimeout(() => updateMapMarkers(donations), 500);
+//         return;
+//     }
+
+//     if (!map) {
+//         map = new google.maps.Map(document.getElementById("map"), {
+//             center: { lat: 26.8467, lng: 80.9462 }, 
+//             zoom: 12,
+//             mapTypeControl: false,
+//             streetViewControl: false
+//         });
+//     }
+
+//     const geocoder = new google.maps.Geocoder();
+//     const bounds = new google.maps.LatLngBounds(); 
+//     let markersProcessed = 0;
+
+//     mapMarkers.forEach(marker => marker.setMap(null));
+//     mapMarkers = [];
+
+//     const activeDonations = donations.filter(item => (item.expiryTime - Date.now()) > 0);
+
+//     if (activeDonations.length === 0) {
+//         map.setCenter({ lat: 26.8467, lng: 80.9462 }); 
+//         map.setZoom(12);
+//         return;
+//     }
+
+//     activeDonations.forEach(item => {
+//         if (item.address) {
+//             let cleanAddress = item.address;
+//             if (!cleanAddress.toLowerCase().includes("lucknow")) cleanAddress += ", Lucknow";
+//             cleanAddress += ", Uttar Pradesh, India";
+            
+//             geocoder.geocode({ address: cleanAddress }, (results, status) => {
+//                 markersProcessed++;
+//                 if (status === "OK" && results[0]) {
+//                     const markerLocation = results[0].geometry.location;
+//                     const marker = new google.maps.Marker({
+//                         map: map, position: markerLocation, title: item.foodType, animation: google.maps.Animation.DROP
+//                     });
+
+//                     const infoWindow = new google.maps.InfoWindow({
+//                         content: `
+//                             <div style="color: #333; font-family: sans-serif; padding: 5px;">
+//                                 <strong>${item.foodType}</strong><br>
+//                                 <span style="color: #666;">Qty: ${item.quantity}</span><br>
+//                                 <button onclick="claimFood('${item.id}')" style="background:var(--success); color:white; border:none; padding:8px 12px; border-radius:4px; margin-top:10px; cursor:pointer; width: 100%;">Claim</button>
+//                             </div>`
+//                     });
+
+//                     marker.addListener('click', () => infoWindow.open(map, marker));
+//                     mapMarkers.push(marker);
+//                     bounds.extend(markerLocation);
+//                 } 
+
+//                 if (markersProcessed === activeDonations.length) {
+//                     if (mapMarkers.length === 1) {
+//                         map.setCenter(mapMarkers[0].getPosition()); map.setZoom(16); 
+//                     } else if (mapMarkers.length > 1) {
+//                         map.fitBounds(bounds); if (map.getZoom() > 16) map.setZoom(16);
+//                     }
+//                 }
+//             });
+//         } else { markersProcessed++; }
+//     });
+// }
 import { auth, db, storage } from './firebase.js'; 
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { 
@@ -2299,35 +2766,34 @@ import {
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
 import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 
-const donorSection = document.getElementById('donor-section');
-const ngoSection = document.getElementById('ngo-section');
 const userDisplay = document.getElementById('user-display');
 
-// 1. Crash-Proof User Auth State
+// ==========================================
+// 1. AUTH STATE & ROUTING
+// ==========================================
 onAuthStateChanged(auth, async (user) => {
     if (user) {
-        try {
-            const userDoc = await getDoc(doc(db, "users", user.uid));
-            if (userDoc.exists()) {
-                const userData = userDoc.data();
-                userDisplay.innerText = `${userData.name} • ${userData.role.toUpperCase()}`;
-
-                if (userData.role === 'donor') {
-                    donorSection.classList.remove('hidden');
-                    loadDonorHistory(user.uid);
-                } else {
-                    ngoSection.classList.remove('hidden');
-                    loadAvailableFood();
-                    loadNGOClaims(user.uid); 
-                }
+        const userDoc = await getDoc(doc(db, "users", user.uid));
+        if (userDoc.exists()) {
+            const userData = userDoc.data();
+            userDisplay.innerText = `${userData.name} • ${userData.role.toUpperCase()}`;
+            if (userData.role === 'donor') {
+                document.getElementById('donor-section').classList.remove('hidden');
+                loadDonorHistory(user.uid);
+            } else {
+                document.getElementById('ngo-section').classList.remove('hidden');
+                loadAvailableFood();
+                loadNGOClaims(user.uid); 
             }
-        } catch (error) { console.error("Auth error:", error); }
-    } else {
-        window.location.href = 'index.html';
+        }
+    } else { 
+        window.location.href = 'index.html'; 
     }
 });
 
-// Photo Preview Logic
+// ==========================================
+// 2. PHOTO PREVIEW LOGIC
+// ==========================================
 document.getElementById('food-photo').addEventListener('change', function(e) {
     const file = e.target.files[0];
     if (file) {
@@ -2341,7 +2807,9 @@ document.getElementById('food-photo').addEventListener('change', function(e) {
     }
 });
 
-// Donor: Submit Donation
+// ==========================================
+// 3. DONOR: SUBMIT DONATION
+// ==========================================
 document.getElementById('donation-form').onsubmit = async (e) => {
     e.preventDefault();
     const submitBtn = e.target.querySelector('button');
@@ -2386,7 +2854,7 @@ document.getElementById('donation-form').onsubmit = async (e) => {
 };
 
 // ==========================================
-// NGO: DATA, FILTERS, AND FEED RENDERING
+// 4. NGO: SEARCH, FILTER & FEED RENDERING
 // ==========================================
 let allAvailableDonations = [];
 
@@ -2403,6 +2871,7 @@ function applyFiltersAndRender() {
     const searchTerm = document.getElementById('search-food').value.toLowerCase();
     const locationFilter = document.getElementById('filter-location').value.toLowerCase();
 
+    // THIS IS THE SEARCH LOGIC
     const filteredData = allAvailableDonations.filter(item => {
         const matchesSearch = item.foodType.toLowerCase().includes(searchTerm) || item.donorName.toLowerCase().includes(searchTerm);
         const matchesLocation = locationFilter === 'all' || item.address.toLowerCase().includes(locationFilter);
@@ -2410,7 +2879,7 @@ function applyFiltersAndRender() {
     });
 
     renderFeed(filteredData);
-    updateMapMarkers(filteredData);     
+    updateMapMarkers(filteredData); // Updates the map based on the search!
 }
 
 function renderFeed(donations) {
@@ -2448,11 +2917,12 @@ function renderFeed(donations) {
     });
 }
 
+// Attach Search Bar Events
 document.getElementById('search-food').addEventListener('input', applyFiltersAndRender);
 document.getElementById('filter-location').addEventListener('change', applyFiltersAndRender);
 
 // ==========================================
-// NGO: CLAIMING & COMPLETING LOGIC
+// 5. NGO: CLAIMING & COMPLETING LOGIC
 // ==========================================
 window.claimFood = async (id) => {
     if(confirm("Claim this food? You must coordinate pickup immediately.")) {
@@ -2471,7 +2941,7 @@ window.completeDonation = async (id) => {
     }
 };
 
-// Load NGO's Active Pickups (Added Maps & Chat features)
+// Load NGO's Active Pickups (With Directions Link)
 function loadNGOClaims(uid) {
     const q = query(collection(db, "donations"), where("claimedBy", "==", uid), where("status", "==", "picked_up"));
     onSnapshot(q, (snapshot) => {
@@ -2487,8 +2957,6 @@ function loadNGOClaims(uid) {
         claimsHeader.style.display = 'block'; 
         snapshot.forEach((docSnap) => {
             const item = docSnap.data();
-            
-            // Generate Google Maps Directions URL
             const mapUrl = `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(item.address + ', Lucknow, Uttar Pradesh, India')}`;
 
             claimsBox.innerHTML += `
@@ -2497,19 +2965,16 @@ function loadNGOClaims(uid) {
                     <div class="card-detail"><strong>From:</strong> <span>${item.address}</span></div>
                     <div class="card-detail"><strong>Donor:</strong> <span>${item.donorName}</span></div>
                     
-                    <div style="display: flex; gap: 10px; margin-top: 15px;">
-                        <button onclick="openChat('${docSnap.id}', '${item.donorName}')" style="flex: 1; background-color: var(--secondary); color: white; padding: 0.5rem; border-radius: 99px;">💬 Chat</button>
-                        <a href="${mapUrl}" target="_blank" style="flex: 1; text-align: center; background-color: var(--info); color: white; padding: 0.5rem; border-radius: 99px; text-decoration: none; font-weight: bold; display: flex; align-items: center; justify-content: center; transition: 0.2s;">📍 Navigate</a>
-                    </div>
+                    <a href="${mapUrl}" target="_blank" style="margin-top: 15px; text-align: center; background-color: var(--secondary); color: white; padding: 0.75rem; border-radius: var(--radius-md); text-decoration: none; font-weight: bold; display: block; transition: 0.2s;">📍 Navigate to Location</a>
                     
-                    <button onclick="completeDonation('${docSnap.id}')" style="margin-top: 10px; width: 100%; background-color: var(--success); color: white; border-radius: 99px;">✅ Mark as Completed</button>
+                    <button onclick="completeDonation('${docSnap.id}')" style="margin-top: 10px; width: 100%; background-color: var(--success); color: white;">✅ Mark as Completed</button>
                 </div>`;
         });
     });
 }
 
 // ==========================================
-// DONOR: HISTORY & BADGES
+// 6. DONOR: HISTORY & BADGES
 // ==========================================
 function loadDonorHistory(uid) {
     const q = query(collection(db, "donations"), where("donorId", "==", uid));
@@ -2535,7 +3000,7 @@ function loadDonorHistory(uid) {
         const progressPercent = Math.min((totalDonations / nextTier) * 100, 100);
         
         document.getElementById('donor-badge-display').innerHTML = `
-            <div style="background: white; border-left: 6px solid ${badgeColor}; padding: 1.5rem; border-radius: var(--radius-lg); margin-bottom: 25px; box-shadow: var(--shadow-sm);">
+            <div style="background: rgba(255,255,255,0.05); border-left: 6px solid ${badgeColor}; padding: 1.5rem; border-radius: var(--radius-lg); margin-bottom: 25px; border: 1px solid var(--border-light);">
                 <h4 style="margin:0 0 10px 0; color: var(--text-main); font-size: 1.2rem;">Your Impact Level: <span style="color: ${badgeColor};">${badge}</span></h4>
                 <div style="background: var(--bg-body); border-radius: 10px; height: 12px; width: 100%; overflow: hidden;">
                     <div style="background: ${badgeColor}; height: 12px; width: ${progressPercent}%; transition: width 1s ease-in-out;"></div>
@@ -2558,10 +3023,7 @@ function loadDonorHistory(uid) {
 
             let actionButtons = '';
             if (item.status === 'available') {
-                actionButtons = `<button onclick="deleteDonorItem('${docSnap.id}')" style="margin-top: 10px; background-color: var(--danger); border-radius: 99px;">Delete Listing</button>`;
-            } else if (item.status === 'picked_up') {
-                // Add Chat button for donor to speak to NGO
-                actionButtons = `<button onclick="openChat('${docSnap.id}', '${item.claimedByName}')" style="margin-top: 10px; background-color: var(--secondary); border-radius: 99px;">💬 Chat with NGO</button>`;
+                actionButtons = `<button onclick="deleteDonorItem('${docSnap.id}')" style="margin-top: 10px; background: var(--danger); background-image: none;">Delete Listing</button>`;
             }
 
             history.innerHTML += `
@@ -2585,107 +3047,15 @@ window.deleteDonorItem = async (id) => {
 };
 
 // ==========================================
-// REAL-TIME IN-APP CHAT LOGIC
+// 7. LOGOUT
 // ==========================================
-let currentChatDonationId = null;
-let unsubscribeChat = null;
-
-window.openChat = (donationId, otherPartyName) => {
-    currentChatDonationId = donationId;
-    document.getElementById('chat-header').innerText = "Chat with " + otherPartyName;
-    document.getElementById('chat-modal').classList.remove('hidden');
-    
-    // Listen for messages linked to this specific donation
-    const q = query(collection(db, "messages"), where("donationId", "==", donationId));
-    
-    unsubscribeChat = onSnapshot(q, (snapshot) => {
-        const chatBox = document.getElementById('chat-messages');
-        chatBox.innerHTML = '';
-        
-        // Extract and sort messages by time so they appear in order
-        let messages = [];
-        snapshot.forEach(docSnap => messages.push(docSnap.data()));
-        messages.sort((a, b) => (a.timestamp?.toMillis() || 0) - (b.timestamp?.toMillis() || 0));
-
-        if (messages.length === 0) {
-            chatBox.innerHTML = `<p style="text-align:center; color:var(--text-muted); margin-top:20px;">Send a message to coordinate pickup!</p>`;
-        }
-
-        messages.forEach(msg => {
-            const isMe = msg.senderId === auth.currentUser.uid;
-            chatBox.innerHTML += `
-                <div style="align-self: ${isMe ? 'flex-end' : 'flex-start'}; background: ${isMe ? 'var(--primary)' : 'white'}; color: ${isMe ? 'white' : 'var(--text-main)'}; padding: 10px 14px; border-radius: 16px; border-bottom-${isMe ? 'right' : 'left'}-radius: 4px; max-width: 85%; box-shadow: var(--shadow-sm); border: 1px solid ${isMe ? 'var(--primary)' : 'var(--border-light)'};">
-                    <span style="font-size: 0.75rem; font-weight: 700; display: block; margin-bottom: 4px; opacity: 0.8;">${msg.senderName}</span>
-                    <span style="font-size: 0.95rem;">${msg.text}</span>
-                </div>
-            `;
-        });
-        
-        // Auto-scroll to latest message
-        chatBox.scrollTop = chatBox.scrollHeight;
-    });
-};
-
-window.closeChat = () => {
-    document.getElementById('chat-modal').classList.add('hidden');
-    if (unsubscribeChat) unsubscribeChat(); // Stop listening when closed
-    currentChatDonationId = null;
-};
-
-// Send a message
-// document.getElementById('chat-form').onsubmit = async (e) => {
-//     e.preventDefault();
-//     const input = document.getElementById('chat-input');
-//     const text = input.value.trim();
-//     if (!text || !currentChatDonationId) return;
-
-//     input.value = ''; // Clear input instantly for UI speed
-    
-//     await addDoc(collection(db, "messages"), {
-//         donationId: currentChatDonationId,
-//         text: text,
-//         senderId: auth.currentUser.uid,
-//         senderName: userDisplay.innerText.split(' •')[0],
-//         timestamp: serverTimestamp()
-//     });
-// };
-// ==========================================
-// BULLETPROOF SEND MESSAGE LOGIC
-// ==========================================
-window.sendChatMessage = async () => {
-    const input = document.getElementById('chat-input');
-    const text = input.value.trim();
-
-    // Prevent empty messages or sending without a chat open
-    if (!text || !currentChatDonationId) return;
-
-    try {
-        await addDoc(collection(db, "messages"), {
-            donationId: currentChatDonationId,
-            text: text,
-            senderId: auth.currentUser.uid,
-            senderName: userDisplay.innerText.split(' •')[0] || "User",
-            timestamp: serverTimestamp()
-        });
-        
-        // If successful, clear the text box
-        input.value = ''; 
-        
-    } catch (err) {
-        // IF FIREBASE BLOCKS IT, THIS POPUP WILL TELL US WHY!
-        console.error("Message failed to send:", err);
-        alert("🚨 ERROR SENDING MESSAGE 🚨\n\n" + err.message + "\n\nDid you update your Firestore Rules?");
-    }
-};
-
-// Logout Logic
 document.getElementById('logout-btn').addEventListener('click', async () => {
     await signOut(auth);
     window.location.href = 'index.html';
 });
 
 // ==========================================
-// SMART GOOGLE MAPS INTEGRATION
+// 8. SMART GOOGLE MAPS INTEGRATION
 // ==========================================
 let map;
 let mapMarkers = [];
@@ -2701,7 +3071,9 @@ function updateMapMarkers(donations) {
             center: { lat: 26.8467, lng: 80.9462 }, 
             zoom: 12,
             mapTypeControl: false,
-            streetViewControl: false
+            streetViewControl: false,
+            // Added a dark mode style to match your new UI!
+            styles: [ { "elementType": "geometry", "stylers": [ { "color": "#242f3e" } ] }, { "elementType": "labels.text.fill", "stylers": [ { "color": "#746855" } ] }, { "elementType": "labels.text.stroke", "stylers": [ { "color": "#242f3e" } ] }, { "featureType": "administrative.locality", "elementType": "labels.text.fill", "stylers": [ { "color": "#d59563" } ] }, { "featureType": "poi", "elementType": "labels.text.fill", "stylers": [ { "color": "#d59563" } ] }, { "featureType": "poi.park", "elementType": "geometry", "stylers": [ { "color": "#263c3f" } ] }, { "featureType": "poi.park", "elementType": "labels.text.fill", "stylers": [ { "color": "#6b9a76" } ] }, { "featureType": "road", "elementType": "geometry", "stylers": [ { "color": "#38414e" } ] }, { "featureType": "road", "elementType": "geometry.stroke", "stylers": [ { "color": "#212a37" } ] }, { "featureType": "road", "elementType": "labels.text.fill", "stylers": [ { "color": "#9ca5b3" } ] }, { "featureType": "road.highway", "elementType": "geometry", "stylers": [ { "color": "#746855" } ] }, { "featureType": "road.highway", "elementType": "geometry.stroke", "stylers": [ { "color": "#1f2835" } ] }, { "featureType": "road.highway", "elementType": "labels.text.fill", "stylers": [ { "color": "#f3d19c" } ] }, { "featureType": "transit", "elementType": "geometry", "stylers": [ { "color": "#2f3948" } ] }, { "featureType": "transit.station", "elementType": "labels.text.fill", "stylers": [ { "color": "#d59563" } ] }, { "featureType": "water", "elementType": "geometry", "stylers": [ { "color": "#17263c" } ] }, { "featureType": "water", "elementType": "labels.text.fill", "stylers": [ { "color": "#515c6d" } ] }, { "featureType": "water", "elementType": "labels.text.stroke", "stylers": [ { "color": "#17263c" } ] } ]
         });
     }
 
@@ -2709,6 +3081,7 @@ function updateMapMarkers(donations) {
     const bounds = new google.maps.LatLngBounds(); 
     let markersProcessed = 0;
 
+    // Clear old markers
     mapMarkers.forEach(marker => marker.setMap(null));
     mapMarkers = [];
 
@@ -2739,7 +3112,7 @@ function updateMapMarkers(donations) {
                             <div style="color: #333; font-family: sans-serif; padding: 5px;">
                                 <strong>${item.foodType}</strong><br>
                                 <span style="color: #666;">Qty: ${item.quantity}</span><br>
-                                <button onclick="claimFood('${item.id}')" style="background:var(--success); color:white; border:none; padding:8px 12px; border-radius:4px; margin-top:10px; cursor:pointer; width: 100%;">Claim</button>
+                                <button onclick="claimFood('${item.id}')" style="background:#10B981; color:white; border:none; padding:8px 12px; border-radius:4px; margin-top:10px; cursor:pointer; width: 100%;">Claim</button>
                             </div>`
                     });
 
@@ -2759,4 +3132,3 @@ function updateMapMarkers(donations) {
         } else { markersProcessed++; }
     });
 }
-
