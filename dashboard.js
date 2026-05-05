@@ -3244,7 +3244,6 @@ function applyFiltersAndRender() {
     const searchTerm = document.getElementById('search-food').value.toLowerCase();
 
     const filteredData = allAvailableDonations.filter(item => {
-        // Now searches Food Type AND the Location Address!
         const matchesSearch = item.foodType.toLowerCase().includes(searchTerm) || 
                               item.address.toLowerCase().includes(searchTerm) || 
                               item.donorName.toLowerCase().includes(searchTerm);
@@ -3253,8 +3252,8 @@ function applyFiltersAndRender() {
 
     renderFeed(filteredData);
     
-    // As soon as the feed filters, the map updates and zooms to those exact locations!
-    updateMapMarkers(filteredData); 
+    // NEW: We now pass the searchTerm to the map engine!
+    updateMapMarkers(filteredData, searchTerm); 
 }
 
 function renderFeed(donations) {
@@ -3262,7 +3261,7 @@ function renderFeed(donations) {
     feed.innerHTML = '';
     
     if(donations.length === 0) {
-        feed.innerHTML = `<p style="color: var(--text-muted); grid-column: 1/-1;">No donations match your search in Lucknow.</p>`;
+        feed.innerHTML = `<p style="color: var(--text-muted); grid-column: 1/-1;">No donations match your search criteria.</p>`;
         return;
     }
     
@@ -3293,6 +3292,70 @@ function renderFeed(donations) {
 }
 
 document.getElementById('search-food').addEventListener('input', applyFiltersAndRender);
+// let allAvailableDonations = [];
+
+// function loadAvailableFood() {
+//     const q = query(collection(db, "donations"), where("status", "==", "available"));
+//     onSnapshot(q, (snapshot) => {
+//         allAvailableDonations = [];
+//         snapshot.forEach((docSnap) => { allAvailableDonations.push({ id: docSnap.id, ...docSnap.data() }); });
+//         applyFiltersAndRender();
+//     });
+// }
+
+// function applyFiltersAndRender() {
+//     const searchTerm = document.getElementById('search-food').value.toLowerCase();
+
+//     const filteredData = allAvailableDonations.filter(item => {
+//         // Now searches Food Type AND the Location Address!
+//         const matchesSearch = item.foodType.toLowerCase().includes(searchTerm) || 
+//                               item.address.toLowerCase().includes(searchTerm) || 
+//                               item.donorName.toLowerCase().includes(searchTerm);
+//         return matchesSearch;
+//     });
+
+//     renderFeed(filteredData);
+    
+//     // As soon as the feed filters, the map updates and zooms to those exact locations!
+//     updateMapMarkers(filteredData); 
+// }
+
+// function renderFeed(donations) {
+//     const feed = document.getElementById('available-feed');
+//     feed.innerHTML = '';
+    
+//     if(donations.length === 0) {
+//         feed.innerHTML = `<p style="color: var(--text-muted); grid-column: 1/-1;">No donations match your search in Lucknow.</p>`;
+//         return;
+//     }
+    
+//     donations.forEach((item) => {
+//         const hoursLeft = (item.expiryTime - Date.now()) / (1000 * 60 * 60);
+//         let expiryAlert = '';
+//         if (hoursLeft <= 0) {
+//             expiryAlert = `<span style="color: var(--danger); font-weight: bold; font-size: 13px;">⚠️ EXPIRED</span>`;
+//         } else if (hoursLeft <= 2) { 
+//             expiryAlert = `<span style="color: var(--warning); font-weight: bold; font-size: 13px;">⏳ Expiring Soon!</span>`;
+//         } else {
+//             expiryAlert = `<span style="color: var(--success); font-weight: bold; font-size: 13px;">Valid for ${Math.round(hoursLeft)} hr(s)</span>`;
+//         }
+
+//         feed.innerHTML += `
+//             <div class="data-card" style="${hoursLeft <= 0 ? 'opacity: 0.6;' : ''}">
+//                 <img src="${item.image}" style="width:100%; height:160px; object-fit:cover; border-radius:var(--radius-md); margin-bottom:12px;">
+//                 <span class="status-badge badge-available">Available</span>
+//                 <h4 class="card-title">${item.foodType}</h4>
+//                 <div class="card-detail"><strong>Quantity:</strong> <span>${item.quantity}</span></div>
+//                 <div class="card-detail"><strong>Status:</strong> ${expiryAlert}</div>
+//                 <div class="card-detail"><strong>Location:</strong> <span>${item.address}</span></div>
+//                 <div class="card-detail" style="margin-bottom: 0.5rem;"><strong>Donor:</strong> <span>${item.donorName}</span></div>
+                
+//                 ${hoursLeft > 0 ? `<button onclick="claimFood('${item.id}')" style="margin-top: auto;">Claim for Pickup</button>` : `<button disabled style="margin-top: auto;">Food Expired</button>`}
+//             </div>`;
+//     });
+// }
+
+// document.getElementById('search-food').addEventListener('input', applyFiltersAndRender);
 
 // ==========================================
 // 5. NGO: CLAIMING & COMPLETING LOGIC
@@ -3428,18 +3491,18 @@ document.getElementById('logout-btn').addEventListener('click', async () => {
 
 // ==========================================
 // 8. LUCKNOW SMART GOOGLE MAPS ZOOM
-// ==========================================
+// // ==========================================
 let map;
 let mapMarkers = [];
 
-function updateMapMarkers(donations) {
+// NEW: Added searchTerm parameter
+function updateMapMarkers(donations, searchTerm = "") {
     if (typeof google === 'undefined') {
-        setTimeout(() => updateMapMarkers(donations), 500);
+        setTimeout(() => updateMapMarkers(donations, searchTerm), 500);
         return;
     }
 
     if (!map) {
-        // Default to Lucknow center
         map = new google.maps.Map(document.getElementById("map"), {
             center: { lat: 26.8467, lng: 80.9462 }, 
             zoom: 12,
@@ -3458,15 +3521,32 @@ function updateMapMarkers(donations) {
 
     const activeDonations = donations.filter(item => (item.expiryTime - Date.now()) > 0);
 
+    // ==========================================
+    // THE FIX: If no food exists, try to zoom to the typed text anyway!
+    // ==========================================
     if (activeDonations.length === 0) {
-        map.setCenter({ lat: 26.8467, lng: 80.9462 }); 
-        map.setZoom(12);
+        if (searchTerm.trim() !== "") {
+            // User typed something, but there is no food. Let's find the location anyway.
+            geocoder.geocode({ address: searchTerm + ", Lucknow, Uttar Pradesh, India" }, (results, status) => {
+                if (status === "OK" && results[0]) {
+                    map.setCenter(results[0].geometry.location);
+                    map.setZoom(14); // Zoom into the empty neighborhood
+                } else {
+                    // Fallback if Google Maps doesn't recognize the word
+                    map.setCenter({ lat: 26.8467, lng: 80.9462 }); 
+                    map.setZoom(12);
+                }
+            });
+        } else {
+            // Search bar is empty, show default Lucknow
+            map.setCenter({ lat: 26.8467, lng: 80.9462 }); 
+            map.setZoom(12);
+        }
         return;
     }
 
     activeDonations.forEach(item => {
         if (item.address) {
-            // Strictly forces the search to Lucknow, Uttar Pradesh
             let cleanAddress = item.address;
             if (!cleanAddress.toLowerCase().includes("lucknow")) cleanAddress += ", Lucknow";
             cleanAddress += ", Uttar Pradesh, India";
@@ -3493,11 +3573,10 @@ function updateMapMarkers(donations) {
                     bounds.extend(markerLocation);
                 } 
 
-                // Dynamic Zoom Logic: If search yields 1 location, zoom way in!
                 if (markersProcessed === activeDonations.length) {
                     if (mapMarkers.length === 1) {
                         map.setCenter(mapMarkers[0].getPosition()); 
-                        map.setZoom(16); // Tight zoom for specific area
+                        map.setZoom(16); 
                     } else if (mapMarkers.length > 1) {
                         map.fitBounds(bounds); 
                         if (map.getZoom() > 16) map.setZoom(16);
@@ -3507,3 +3586,81 @@ function updateMapMarkers(donations) {
         } else { markersProcessed++; }
     });
 }
+// let map;
+// let mapMarkers = [];
+
+// function updateMapMarkers(donations) {
+//     if (typeof google === 'undefined') {
+//         setTimeout(() => updateMapMarkers(donations), 500);
+//         return;
+//     }
+
+//     if (!map) {
+//         // Default to Lucknow center
+//         map = new google.maps.Map(document.getElementById("map"), {
+//             center: { lat: 26.8467, lng: 80.9462 }, 
+//             zoom: 12,
+//             mapTypeControl: false,
+//             streetViewControl: false,
+//             styles: [ { "elementType": "geometry", "stylers": [ { "color": "#242f3e" } ] }, { "elementType": "labels.text.fill", "stylers": [ { "color": "#746855" } ] }, { "elementType": "labels.text.stroke", "stylers": [ { "color": "#242f3e" } ] }, { "featureType": "administrative.locality", "elementType": "labels.text.fill", "stylers": [ { "color": "#d59563" } ] }, { "featureType": "poi", "elementType": "labels.text.fill", "stylers": [ { "color": "#d59563" } ] }, { "featureType": "poi.park", "elementType": "geometry", "stylers": [ { "color": "#263c3f" } ] }, { "featureType": "poi.park", "elementType": "labels.text.fill", "stylers": [ { "color": "#6b9a76" } ] }, { "featureType": "road", "elementType": "geometry", "stylers": [ { "color": "#38414e" } ] }, { "featureType": "road", "elementType": "geometry.stroke", "stylers": [ { "color": "#212a37" } ] }, { "featureType": "road", "elementType": "labels.text.fill", "stylers": [ { "color": "#9ca5b3" } ] }, { "featureType": "road.highway", "elementType": "geometry", "stylers": [ { "color": "#746855" } ] }, { "featureType": "road.highway", "elementType": "geometry.stroke", "stylers": [ { "color": "#1f2835" } ] }, { "featureType": "road.highway", "elementType": "labels.text.fill", "stylers": [ { "color": "#f3d19c" } ] }, { "featureType": "transit", "elementType": "geometry", "stylers": [ { "color": "#2f3948" } ] }, { "featureType": "transit.station", "elementType": "labels.text.fill", "stylers": [ { "color": "#d59563" } ] }, { "featureType": "water", "elementType": "geometry", "stylers": [ { "color": "#17263c" } ] }, { "featureType": "water", "elementType": "labels.text.fill", "stylers": [ { "color": "#515c6d" } ] }, { "featureType": "water", "elementType": "labels.text.stroke", "stylers": [ { "color": "#17263c" } ] } ]
+//         });
+//     }
+
+//     const geocoder = new google.maps.Geocoder();
+//     const bounds = new google.maps.LatLngBounds(); 
+//     let markersProcessed = 0;
+
+//     mapMarkers.forEach(marker => marker.setMap(null));
+//     mapMarkers = [];
+
+//     const activeDonations = donations.filter(item => (item.expiryTime - Date.now()) > 0);
+
+//     if (activeDonations.length === 0) {
+//         map.setCenter({ lat: 26.8467, lng: 80.9462 }); 
+//         map.setZoom(12);
+//         return;
+//     }
+
+//     activeDonations.forEach(item => {
+//         if (item.address) {
+//             // Strictly forces the search to Lucknow, Uttar Pradesh
+//             let cleanAddress = item.address;
+//             if (!cleanAddress.toLowerCase().includes("lucknow")) cleanAddress += ", Lucknow";
+//             cleanAddress += ", Uttar Pradesh, India";
+            
+//             geocoder.geocode({ address: cleanAddress }, (results, status) => {
+//                 markersProcessed++;
+//                 if (status === "OK" && results[0]) {
+//                     const markerLocation = results[0].geometry.location;
+//                     const marker = new google.maps.Marker({
+//                         map: map, position: markerLocation, title: item.foodType, animation: google.maps.Animation.DROP
+//                     });
+
+//                     const infoWindow = new google.maps.InfoWindow({
+//                         content: `
+//                             <div style="color: #333; font-family: sans-serif; padding: 5px;">
+//                                 <strong>${item.foodType}</strong><br>
+//                                 <span style="color: #666;">Qty: ${item.quantity}</span><br>
+//                                 <button onclick="claimFood('${item.id}')" style="background:#10B981; color:white; border:none; padding:8px 12px; border-radius:4px; margin-top:10px; cursor:pointer; width: 100%;">Claim</button>
+//                             </div>`
+//                     });
+
+//                     marker.addListener('click', () => infoWindow.open(map, marker));
+//                     mapMarkers.push(marker);
+//                     bounds.extend(markerLocation);
+//                 } 
+
+//                 // Dynamic Zoom Logic: If search yields 1 location, zoom way in!
+//                 if (markersProcessed === activeDonations.length) {
+//                     if (mapMarkers.length === 1) {
+//                         map.setCenter(mapMarkers[0].getPosition()); 
+//                         map.setZoom(16); // Tight zoom for specific area
+//                     } else if (mapMarkers.length > 1) {
+//                         map.fitBounds(bounds); 
+//                         if (map.getZoom() > 16) map.setZoom(16);
+//                     }
+//                 }
+//             });
+//         } else { markersProcessed++; }
+//     });
+// }
