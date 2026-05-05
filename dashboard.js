@@ -3140,6 +3140,36 @@ import {
 import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 
 const userDisplay = document.getElementById('user-display');
+// ==========================================
+// 🔥 NEW: MAP SEARCH BOX FIX (ADDED)
+// ==========================================
+let searchBox;
+function initSearchBox() {
+    if (typeof google === "undefined") {
+        setTimeout(initSearchBox, 500);
+        return;
+    }
+
+    const input = document.getElementById("search-food");
+    if (!input) return;
+
+    searchBox = new google.maps.places.SearchBox(input);
+
+    searchBox.addListener("places_changed", () => {
+        const places = searchBox.getPlaces();
+        if (!places || places.length === 0) return;
+
+        const place = places[0];
+        if (!place.geometry) return;
+
+        if (map) {
+            map.setCenter(place.geometry.location);
+            map.setZoom(14);
+        }
+    });
+}
+window.addEventListener("load", initSearchBox);
+
 
 // ==========================================
 // 1. AUTH STATE & ROUTING
@@ -3169,16 +3199,34 @@ onAuthStateChanged(auth, async (user) => {
 // ==========================================
 document.getElementById('food-photo').addEventListener('change', function(e) {
     const file = e.target.files[0];
-    if (file) {
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            const preview = document.getElementById('photo-preview');
-            preview.src = e.target.result;
-            preview.style.display = 'block';
-        }
-        reader.readAsDataURL(file);
+    if (!file) return;
+
+    if (!file.type.startsWith("image/")) {
+        alert("Only image files allowed!");
+        e.target.value = "";
+        return;
     }
+
+    const reader = new FileReader();
+    reader.onload = function(e) {
+        const preview = document.getElementById('photo-preview');
+        preview.src = e.target.result;
+        preview.style.display = 'block';
+    };
+    reader.readAsDataURL(file);
 });
+// document.getElementById('food-photo').addEventListener('change', function(e) {
+//     const file = e.target.files[0];
+//     if (file) {
+//         const reader = new FileReader();
+//         reader.onload = function(e) {
+//             const preview = document.getElementById('photo-preview');
+//             preview.src = e.target.result;
+//             preview.style.display = 'block';
+//         }
+//         reader.readAsDataURL(file);
+//     }
+// });
 
 // ==========================================
 // 3. DONOR: SUBMIT DONATION
@@ -3195,11 +3243,31 @@ document.getElementById('donation-form').onsubmit = async (e) => {
     const expiryTimestamp = Date.now() + (hoursValid * 60 * 60 * 1000);
 
     try {
+              // 🔥 NEW: VALIDATION
         if (file) {
-            const storageRef = ref(storage, `food_images/${Date.now()}_${file.name}`);
+            if (!file.type.startsWith("image/")) {
+                alert("Please upload a valid image!");
+                throw new Error("Invalid file type");
+            }
+
+            if (file.size > 2 * 1024 * 1024) {
+                alert("Image must be < 2MB");
+                throw new Error("File too large");
+            }
+
+            // 🔥 NEW: UNIQUE FILE NAME
+            const uniqueName = `${Date.now()}_${Math.random().toString(36).substring(2)}_${file.name}`;
+            const storageRef = ref(storage, `food_images/${uniqueName}`);
+
             const snapshot = await uploadBytes(storageRef, file);
             photoURL = await getDownloadURL(snapshot.ref);
         }
+            
+        // if (file) {
+        //     const storageRef = ref(storage, `food_images/${Date.now()}_${file.name}`);
+        //     const snapshot = await uploadBytes(storageRef, file);
+        //     photoURL = await getDownloadURL(snapshot.ref);
+        // }
 
         const foodData = {
             foodType: document.getElementById('food-type').value,
