@@ -3311,25 +3311,78 @@ document.getElementById('donation-form').onsubmit = async (e) => {
     const cloudName = "duj9ummoo"; 
     const uploadPreset = "fooddonation_preset"; 
 
-    try {
+//     try {
+//         // --- CLOUDINARY UPLOAD LOGIC ---
+//         if (file) {
+//             const formData = new FormData();
+//             formData.append('file', file);
+//             formData.append('upload_preset', uploadPreset);
+
+//             // Send the image directly to Cloudinary's API
+//             const cloudinaryResponse = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+//                 method: 'POST',
+//                 body: formData
+//             });
+
+//             if (!cloudinaryResponse.ok) {
+//                 throw new Error("Failed to upload image to Cloudinary.");
+//             }
+
+//             const cloudinaryData = await cloudinaryResponse.json();
+//             // Grab the secure HTTPS link provided by Cloudinary
+//             photoURL = cloudinaryData.secure_url; 
+//         }
+
+//         // --- FIREBASE DATABASE LOGIC ---
+//         submitBtn.innerText = "Saving to Database...";
+
+//         const foodData = {
+//             foodType: document.getElementById('food-type').value,
+//             quantity: document.getElementById('quantity').value + ' ' + document.getElementById('quantity-unit').value,
+//             shelfLifeHours: hoursValid,
+//             expiryTime: expiryTimestamp, 
+//             address: document.getElementById('address').value,
+//             image: photoURL, // This is now the Cloudinary URL!
+//             donorId: auth.currentUser.uid,
+//             donorName: userDisplay.innerText.split(' •')[0],
+//             status: 'available', 
+//             createdAt: serverTimestamp()
+//         };
+
+//         // Save the details (with the new image link) to Firestore
+//         await addDoc(collection(db, "donations"), foodData);
+//         e.target.reset(); 
+//         document.getElementById('photo-preview').style.display = 'none';
+//         alert("Donation posted successfully!");
+
+//     } catch (error) { 
+//         console.error("Upload Error:", error);
+//         alert("Error: " + error.message); 
+//     } finally {
+//         submitBtn.innerText = "List Food Item";
+//         submitBtn.disabled = false;
+//     }
+// };
+        try {
         // --- CLOUDINARY UPLOAD LOGIC ---
         if (file) {
             const formData = new FormData();
             formData.append('file', file);
             formData.append('upload_preset', uploadPreset);
 
-            // Send the image directly to Cloudinary's API
             const cloudinaryResponse = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
                 method: 'POST',
                 body: formData
             });
 
+            // Read the exact response from Cloudinary BEFORE checking if it failed
+            const cloudinaryData = await cloudinaryResponse.json();
+
             if (!cloudinaryResponse.ok) {
-                throw new Error("Failed to upload image to Cloudinary.");
+                // This will grab Cloudinary's exact error message!
+                throw new Error(cloudinaryData.error?.message || "Unknown Cloudinary Error");
             }
 
-            const cloudinaryData = await cloudinaryResponse.json();
-            // Grab the secure HTTPS link provided by Cloudinary
             photoURL = cloudinaryData.secure_url; 
         }
 
@@ -3342,14 +3395,13 @@ document.getElementById('donation-form').onsubmit = async (e) => {
             shelfLifeHours: hoursValid,
             expiryTime: expiryTimestamp, 
             address: document.getElementById('address').value,
-            image: photoURL, // This is now the Cloudinary URL!
+            image: photoURL, 
             donorId: auth.currentUser.uid,
             donorName: userDisplay.innerText.split(' •')[0],
             status: 'available', 
             createdAt: serverTimestamp()
         };
 
-        // Save the details (with the new image link) to Firestore
         await addDoc(collection(db, "donations"), foodData);
         e.target.reset(); 
         document.getElementById('photo-preview').style.display = 'none';
@@ -3357,12 +3409,12 @@ document.getElementById('donation-form').onsubmit = async (e) => {
 
     } catch (error) { 
         console.error("Upload Error:", error);
-        alert("Error: " + error.message); 
+        // This popup will now tell you EXACTLY what is wrong
+        alert("CLOUDINARY ERROR: " + error.message); 
     } finally {
         submitBtn.innerText = "List Food Item";
         submitBtn.disabled = false;
     }
-};
 
 // ==========================================
 // 4. NGO: SEARCH, FILTER & DYNAMIC MAP ZOOM
