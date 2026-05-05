@@ -3137,7 +3137,7 @@ import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/
 import { 
     collection, addDoc, query, where, onSnapshot, doc, getDoc, updateDoc, serverTimestamp, deleteDoc 
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
+// import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 
 const userDisplay = document.getElementById('user-display');
 // ==========================================
@@ -3228,13 +3228,78 @@ document.getElementById('food-photo').addEventListener('change', function(e) {
 //     }
 // });
 
+// // ==========================================
+// // 3. DONOR: SUBMIT DONATION
+// // ==========================================
+// document.getElementById('donation-form').onsubmit = async (e) => {
+//     e.preventDefault();
+//     const submitBtn = e.target.querySelector('button');
+//     submitBtn.innerText = "Uploading...";
+//     submitBtn.disabled = true;
+
+//     const file = document.getElementById('food-photo').files[0];
+//     let photoURL = "https://via.placeholder.com/300?text=No+Image+Available";
+//     const hoursValid = parseInt(document.getElementById('shelf-life').value);
+//     const expiryTimestamp = Date.now() + (hoursValid * 60 * 60 * 1000);
+
+//     try {
+//               // 🔥 NEW: VALIDATION
+//         if (file) {
+//             if (!file.type.startsWith("image/")) {
+//                 alert("Please upload a valid image!");
+//                 throw new Error("Invalid file type");
+//             }
+
+//             if (file.size > 2 * 1024 * 1024) {
+//                 alert("Image must be < 2MB");
+//                 throw new Error("File too large");
+//             }
+
+//             // 🔥 NEW: UNIQUE FILE NAME
+//             const uniqueName = `${Date.now()}_${Math.random().toString(36).substring(2)}_${file.name}`;
+//             const storageRef = ref(storage, `food_images/${uniqueName}`);
+
+//             const snapshot = await uploadBytes(storageRef, file);
+//             photoURL = await getDownloadURL(snapshot.ref);
+//         }
+            
+//         // if (file) {
+//         //     const storageRef = ref(storage, `food_images/${Date.now()}_${file.name}`);
+//         //     const snapshot = await uploadBytes(storageRef, file);
+//         //     photoURL = await getDownloadURL(snapshot.ref);
+//         // }
+
+//         const foodData = {
+//             foodType: document.getElementById('food-type').value,
+//             quantity: document.getElementById('quantity').value + ' ' + document.getElementById('quantity-unit').value,
+//             shelfLifeHours: hoursValid,
+//             expiryTime: expiryTimestamp, 
+//             address: document.getElementById('address').value,
+//             image: photoURL,
+//             donorId: auth.currentUser.uid,
+//             donorName: userDisplay.innerText.split(' •')[0],
+//             status: 'available', 
+//             createdAt: serverTimestamp()
+//         };
+
+//         await addDoc(collection(db, "donations"), foodData);
+//         e.target.reset(); 
+//         document.getElementById('photo-preview').style.display = 'none';
+//         alert("Donation posted successfully!");
+//     } catch (error) { 
+//         alert("Error: " + error.message); 
+//     } finally {
+//         submitBtn.innerText = "List Food Item";
+//         submitBtn.disabled = false;
+//     }
+// };
 // ==========================================
-// 3. DONOR: SUBMIT DONATION
+// 3. DONOR: SUBMIT DONATION (Using Cloudinary)
 // ==========================================
 document.getElementById('donation-form').onsubmit = async (e) => {
     e.preventDefault();
     const submitBtn = e.target.querySelector('button');
-    submitBtn.innerText = "Uploading...";
+    submitBtn.innerText = "Uploading Image...";
     submitBtn.disabled = true;
 
     const file = document.getElementById('food-photo').files[0];
@@ -3242,32 +3307,34 @@ document.getElementById('donation-form').onsubmit = async (e) => {
     const hoursValid = parseInt(document.getElementById('shelf-life').value);
     const expiryTimestamp = Date.now() + (hoursValid * 60 * 60 * 1000);
 
+    // ⚠️ PASTE YOUR CLOUDINARY DETAILS HERE ⚠️
+    const cloudName = "YOUR_CLOUD_NAME"; 
+    const uploadPreset = "YOUR_UNSIGNED_PRESET_NAME"; 
+
     try {
-              // 🔥 NEW: VALIDATION
+        // --- CLOUDINARY UPLOAD LOGIC ---
         if (file) {
-            if (!file.type.startsWith("image/")) {
-                alert("Please upload a valid image!");
-                throw new Error("Invalid file type");
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('upload_preset', uploadPreset);
+
+            // Send the image directly to Cloudinary's API
+            const cloudinaryResponse = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!cloudinaryResponse.ok) {
+                throw new Error("Failed to upload image to Cloudinary.");
             }
 
-            if (file.size > 2 * 1024 * 1024) {
-                alert("Image must be < 2MB");
-                throw new Error("File too large");
-            }
-
-            // 🔥 NEW: UNIQUE FILE NAME
-            const uniqueName = `${Date.now()}_${Math.random().toString(36).substring(2)}_${file.name}`;
-            const storageRef = ref(storage, `food_images/${uniqueName}`);
-
-            const snapshot = await uploadBytes(storageRef, file);
-            photoURL = await getDownloadURL(snapshot.ref);
+            const cloudinaryData = await cloudinaryResponse.json();
+            // Grab the secure HTTPS link provided by Cloudinary
+            photoURL = cloudinaryData.secure_url; 
         }
-            
-        // if (file) {
-        //     const storageRef = ref(storage, `food_images/${Date.now()}_${file.name}`);
-        //     const snapshot = await uploadBytes(storageRef, file);
-        //     photoURL = await getDownloadURL(snapshot.ref);
-        // }
+
+        // --- FIREBASE DATABASE LOGIC ---
+        submitBtn.innerText = "Saving to Database...";
 
         const foodData = {
             foodType: document.getElementById('food-type').value,
@@ -3275,18 +3342,21 @@ document.getElementById('donation-form').onsubmit = async (e) => {
             shelfLifeHours: hoursValid,
             expiryTime: expiryTimestamp, 
             address: document.getElementById('address').value,
-            image: photoURL,
+            image: photoURL, // This is now the Cloudinary URL!
             donorId: auth.currentUser.uid,
             donorName: userDisplay.innerText.split(' •')[0],
             status: 'available', 
             createdAt: serverTimestamp()
         };
 
+        // Save the details (with the new image link) to Firestore
         await addDoc(collection(db, "donations"), foodData);
         e.target.reset(); 
         document.getElementById('photo-preview').style.display = 'none';
         alert("Donation posted successfully!");
+
     } catch (error) { 
+        console.error("Upload Error:", error);
         alert("Error: " + error.message); 
     } finally {
         submitBtn.innerText = "List Food Item";
