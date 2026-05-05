@@ -2,32 +2,25 @@
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 :root {
-    /* Premium Color Palette */
-    --primary: #0EA5E9;       /* Aqua/Teal */
-    --primary-to: #10B981;    /* Emerald */
-    --secondary: #3B82F6;     /* Blue */
-    --success: #14B8A6;       /* Soft Teal */
-    --warning: #F59E0B;       /* Amber */
-    --danger: #EF4444;        /* Red */
+    --primary: #0EA5E9;       
+    --primary-to: #10B981;    
+    --secondary: #3B82F6;     
+    --success: #14B8A6;       
+    --warning: #F59E0B;       
+    --danger: #EF4444;        
     
-    /* Dark Surface & Backgrounds */
-    --bg-body: #0A1420;       /* Slate 950 - Extremely deep navy */
-    --bg-surface: #152031;    /* Slate 800 - Cards and containers */
+    --bg-body: #0A1420;       
+    --bg-surface: #152031;    
     --border-light: rgba(226, 232, 240, 0.1); 
     
-    /* Typography */
-    --text-main: #FFFFFF;     /* Pure white for headlines */
-    --text-muted: #94A3B8;    /* Slate 400 - Description text */
+    --text-main: #FFFFFF;     
+    --text-muted: #94A3B8;    
     
-    /* Geometry & Shadows */
     --radius-md: 12px;
     --radius-lg: 20px;
     --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.3);
 }
 
-/* ==========================================
-   2. GLOBAL RESET & TYPOGRAPHY
-   ========================================== */
 * {
     box-sizing: border-box;
     margin: 0;
@@ -36,17 +29,68 @@
 
 body {
     font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
-    background-color: var(--bg-body);
+    background-color: var(--bg-body) !important;
     color: var(--text-muted);
     line-height: 1.6;
     -webkit-font-smoothing: antialiased;
 }
 
 /* ==========================================
+   2. AUTHENTICATION UI (THE LOGIN BOX)
+   ========================================== */
+.auth-container {
+    max-width: 380px; /* Made the block size more compact */
+    margin: 12vh auto; /* Centers the box perfectly on the screen */
+    padding: 2.5rem 2rem;
+    background-color: var(--bg-surface) !important;
+    border-radius: var(--radius-lg);
+    box-shadow: 0 15px 35px rgba(0, 0, 0, 0.6); /* Deeper shadow to make it look like a floating box */
+    border: 1px solid var(--border-light);
+}
+
+.auth-container h2 {
+    text-align: center;
+    color: var(--text-main) !important;
+    margin-bottom: 1.5rem;
+    font-size: 1.5rem;
+    font-weight: 700;
+}
+
+/* Minimizes the size of the inputs strictly on the login page */
+.auth-container input {
+    padding: 0.75rem 1rem !important; 
+    margin-bottom: 0.5rem;
+}
+
+.auth-container label {
+    font-size: 0.85rem;
+}
+
+.auth-container p, .auth-container a {
+    color: var(--text-muted) !important;
+    text-align: center;
+    display: block;
+    margin-top: 1rem;
+    font-size: 0.9rem;
+}
+
+.auth-container a {
+    color: var(--primary) !important;
+    font-weight: 600;
+    text-decoration: none;
+    transition: color 0.2s;
+}
+
+.auth-container a:hover {
+    color: var(--primary-to) !important;
+    text-decoration: none;
+}
+
+/* ==========================================
    3. NAVIGATION BAR
    ========================================== */
 .navbar {
-    background: rgba(10, 20, 32, 0.85); /* Glass effect */
+    background: rgba(10, 20, 32, 0.85); 
     backdrop-filter: blur(12px);
     padding: 1.25rem 5%;
     display: flex;
@@ -124,7 +168,7 @@ body {
 }
 
 /* ==========================================
-   5. INPUTS & GRADIENT BUTTONS
+   5. DASHBOARD INPUTS & BUTTONS
    ========================================== */
 label {
     display: block;
@@ -176,6 +220,7 @@ button[disabled] {
     background: rgba(255,255,255,0.05);
     color: var(--text-muted);
     cursor: not-allowed;
+    background-image: none;
 }
 
 /* ==========================================
@@ -280,6 +325,9 @@ button[disabled] {
     border: 1px solid rgba(59, 130, 246, 0.3);
 }
 
+/* ==========================================
+   8. MAP OVERRIDES
+   ========================================== */
 #map {
     background-color: var(--bg-surface) !important;
     border: 1px solid var(--border-light) !important;
