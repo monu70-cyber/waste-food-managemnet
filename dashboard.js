@@ -3601,6 +3601,72 @@ function loadNGOClaims(uid) {
 // ==========================================
 // 6. DONOR: HISTORY & BADGES
 // ==========================================
+// function loadDonorHistory(uid) {
+//     const q = query(collection(db, "donations"), where("donorId", "==", uid));
+//     onSnapshot(q, (snapshot) => {
+//         const history = document.getElementById('donor-history');
+//         history.innerHTML = '';
+        
+//         const totalDonations = snapshot.size;
+//         let badge = '🥉 Bronze Donor';
+//         let badgeColor = '#cd7f32'; 
+//         let nextTier = 5;
+        
+//         if (totalDonations >= 15) { 
+//             badge = '🏆 Gold Donor'; 
+//             badgeColor = '#f1c40f'; 
+//             nextTier = totalDonations; 
+//         } else if (totalDonations >= 5) { 
+//             badge = '🥈 Silver Donor'; 
+//             badgeColor = '#94A3B8'; 
+//             nextTier = 15; 
+//         }
+
+//         const progressPercent = Math.min((totalDonations / nextTier) * 100, 100);
+        
+//         document.getElementById('donor-badge-display').innerHTML = `
+//             <div style="background: rgba(255,255,255,0.05); border-left: 6px solid ${badgeColor}; padding: 1.5rem; border-radius: var(--radius-lg); margin-bottom: 25px; border: 1px solid var(--border-light);">
+//                 <h4 style="margin:0 0 10px 0; color: var(--text-main); font-size: 1.2rem;">Your Impact Level: <span style="color: ${badgeColor};">${badge}</span></h4>
+//                 <div style="background: var(--bg-body); border-radius: 10px; height: 12px; width: 100%; overflow: hidden;">
+//                     <div style="background: ${badgeColor}; height: 12px; width: ${progressPercent}%; transition: width 1s ease-in-out;"></div>
+//                 </div>
+//                 <small style="color:var(--text-muted); display: block; margin-top: 10px; font-weight: 600;">You've made ${totalDonations} donations! ${totalDonations < 15 ? `(Next tier at ${nextTier})` : 'You reached the top tier!'}</small>
+//             </div>
+//         `;
+
+//         if(snapshot.empty) {
+//             history.innerHTML = `<p style="color: var(--text-muted); grid-column: 1/-1;">You haven't posted any donations yet.</p>`;
+//             return;
+//         }
+
+//         snapshot.forEach((docSnap) => {
+//             const item = docSnap.data();
+//             let statusText = 'Pending Pickup';
+//             let badgeClass = 'badge-available';
+//             if (item.status === 'picked_up') { statusText = 'Picked Up'; badgeClass = 'badge-claimed'; }
+//             if (item.status === 'completed') { statusText = 'Completed'; badgeClass = 'badge-completed'; } 
+
+//             let actionButtons = '';
+//             if (item.status === 'available') {
+//                 actionButtons = `<button onclick="deleteDonorItem('${docSnap.id}')" style="margin-top: 10px; background: var(--danger); background-image: none;">Delete Listing</button>`;
+//             }
+
+//             history.innerHTML += `
+//                 <div class="data-card">
+//                     <img src="${item.image}" style="width:100%; height:120px; object-fit:cover; border-radius:var(--radius-md); margin-bottom:12px;">
+//                     <span class="status-badge ${badgeClass}">${statusText}</span>
+//                     <h4 class="card-title">${item.foodType}</h4>
+//                     <div class="card-detail"><strong>Quantity:</strong> <span>${item.quantity}</span></div>
+//                     <div class="card-detail"><strong>Location:</strong> <span>${item.address}</span></div>
+//                     ${item.status !== 'available' ? `<div class="card-detail" style="margin-top: 0.5rem; color: var(--primary);"><strong>Handled By:</strong> <span>${item.claimedByName}</span></div>` : ''}
+//                     ${actionButtons}
+//                 </div>`;
+//         });
+//     });
+// }
+// ==========================================
+// 6. DONOR: HISTORY, BADGES & EXPIRED CLEANUP
+// ==========================================
 function loadDonorHistory(uid) {
     const q = query(collection(db, "donations"), where("donorId", "==", uid));
     onSnapshot(q, (snapshot) => {
@@ -3641,20 +3707,41 @@ function loadDonorHistory(uid) {
 
         snapshot.forEach((docSnap) => {
             const item = docSnap.data();
+            
+            // NEW: Check if the food is expired
+            const hoursLeft = (item.expiryTime - Date.now()) / (1000 * 60 * 60);
+            const isExpired = hoursLeft <= 0 && item.status === 'available';
+
             let statusText = 'Pending Pickup';
             let badgeClass = 'badge-available';
-            if (item.status === 'picked_up') { statusText = 'Picked Up'; badgeClass = 'badge-claimed'; }
-            if (item.status === 'completed') { statusText = 'Completed'; badgeClass = 'badge-completed'; } 
+            let expiredStyles = ''; 
+
+            if (item.status === 'picked_up') { 
+                statusText = 'Picked Up'; badgeClass = 'badge-claimed'; 
+            } else if (item.status === 'completed') { 
+                statusText = 'Completed'; badgeClass = 'badge-completed'; 
+            } else if (isExpired) {
+                // Change UI to red if it is expired
+                statusText = 'Expired'; 
+                badgeClass = ''; 
+                expiredStyles = 'background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid var(--danger);';
+            }
 
             let actionButtons = '';
             if (item.status === 'available') {
-                actionButtons = `<button onclick="deleteDonorItem('${docSnap.id}')" style="margin-top: 10px; background: var(--danger); background-image: none;">Delete Listing</button>`;
+                if (isExpired) {
+                    // Show a bold delete button for expired food
+                    actionButtons = `<button onclick="deleteDonorItem('${docSnap.id}')" style="margin-top: 10px; background: var(--danger); background-image: none; box-shadow: 0 4px 15px rgba(239,68,68,0.3);">🗑️ Delete Expired Food</button>`;
+                } else {
+                    // Standard cancel button for active food
+                    actionButtons = `<button onclick="deleteDonorItem('${docSnap.id}')" style="margin-top: 10px; background: transparent; color: var(--danger); border: 1px solid var(--danger); background-image: none;">Cancel Listing</button>`;
+                }
             }
 
             history.innerHTML += `
-                <div class="data-card">
+                <div class="data-card" style="${isExpired ? 'opacity: 0.8; border-color: rgba(239,68,68,0.4);' : ''}">
                     <img src="${item.image}" style="width:100%; height:120px; object-fit:cover; border-radius:var(--radius-md); margin-bottom:12px;">
-                    <span class="status-badge ${badgeClass}">${statusText}</span>
+                    <span class="status-badge ${badgeClass}" style="${expiredStyles}">${statusText}</span>
                     <h4 class="card-title">${item.foodType}</h4>
                     <div class="card-detail"><strong>Quantity:</strong> <span>${item.quantity}</span></div>
                     <div class="card-detail"><strong>Location:</strong> <span>${item.address}</span></div>
