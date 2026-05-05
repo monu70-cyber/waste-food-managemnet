@@ -3308,8 +3308,8 @@ document.getElementById('donation-form').onsubmit = async (e) => {
     const expiryTimestamp = Date.now() + (hoursValid * 60 * 60 * 1000);
 
     // ⚠️ PASTE YOUR CLOUDINARY DETAILS HERE ⚠️
-    const cloudName = "YOUR_CLOUD_NAME"; 
-    const uploadPreset = "YOUR_UNSIGNED_PRESET_NAME"; 
+    const cloudName = "duj9ummoo"; 
+    const uploadPreset = "fooddonation_preset"; 
 
     try {
         // --- CLOUDINARY UPLOAD LOGIC ---
