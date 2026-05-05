@@ -1,6 +1,4 @@
-/* ==========================================
-   1. HIGH-CONTRAST DARK THEME & VARIABLES
-   ========================================== */
+
 @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap');
 
 :root {
@@ -282,9 +280,6 @@ button[disabled] {
     border: 1px solid rgba(59, 130, 246, 0.3);
 }
 
-/* ==========================================
-   8. MAP OVERRIDES
-   ========================================== */
 #map {
     background-color: var(--bg-surface) !important;
     border: 1px solid var(--border-light) !important;
