@@ -3132,89 +3132,89 @@
 //         } else { markersProcessed++; }
 //     });
 // }
-import { auth, db, storage } from './firebase.js'; 
-import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
-import { 
-    collection, addDoc, query, where, onSnapshot, doc, getDoc, updateDoc, serverTimestamp, deleteDoc 
-} from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
-// import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
+// import { auth, db, storage } from './firebase.js'; 
+// import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
+// import { 
+//     collection, addDoc, query, where, onSnapshot, doc, getDoc, updateDoc, serverTimestamp, deleteDoc 
+// } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+// // import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 
-const userDisplay = document.getElementById('user-display');
-// ==========================================
-// 🔥 NEW: MAP SEARCH BOX FIX (ADDED)
-// ==========================================
-let searchBox;
-function initSearchBox() {
-    if (typeof google === "undefined") {
-        setTimeout(initSearchBox, 500);
-        return;
-    }
+// const userDisplay = document.getElementById('user-display');
+// // ==========================================
+// // 🔥 NEW: MAP SEARCH BOX FIX (ADDED)
+// // ==========================================
+// let searchBox;
+// function initSearchBox() {
+//     if (typeof google === "undefined") {
+//         setTimeout(initSearchBox, 500);
+//         return;
+//     }
 
-    const input = document.getElementById("search-food");
-    if (!input) return;
+//     const input = document.getElementById("search-food");
+//     if (!input) return;
 
-    searchBox = new google.maps.places.SearchBox(input);
+//     searchBox = new google.maps.places.SearchBox(input);
 
-    searchBox.addListener("places_changed", () => {
-        const places = searchBox.getPlaces();
-        if (!places || places.length === 0) return;
+//     searchBox.addListener("places_changed", () => {
+//         const places = searchBox.getPlaces();
+//         if (!places || places.length === 0) return;
 
-        const place = places[0];
-        if (!place.geometry) return;
+//         const place = places[0];
+//         if (!place.geometry) return;
 
-        if (map) {
-            map.setCenter(place.geometry.location);
-            map.setZoom(14);
-        }
-    });
-}
-window.addEventListener("load", initSearchBox);
+//         if (map) {
+//             map.setCenter(place.geometry.location);
+//             map.setZoom(14);
+//         }
+//     });
+// }
+// window.addEventListener("load", initSearchBox);
 
 
-// ==========================================
-// 1. AUTH STATE & ROUTING
-// ==========================================
-onAuthStateChanged(auth, async (user) => {
-    if (user) {
-        const userDoc = await getDoc(doc(db, "users", user.uid));
-        if (userDoc.exists()) {
-            const userData = userDoc.data();
-            userDisplay.innerText = `${userData.name} • ${userData.role.toUpperCase()}`;
-            if (userData.role === 'donor') {
-                document.getElementById('donor-section').classList.remove('hidden');
-                loadDonorHistory(user.uid);
-            } else {
-                document.getElementById('ngo-section').classList.remove('hidden');
-                loadAvailableFood();
-                loadNGOClaims(user.uid); 
-            }
-        }
-    } else { 
-        window.location.href = 'index.html'; 
-    }
-});
+// // ==========================================
+// // 1. AUTH STATE & ROUTING
+// // ==========================================
+// onAuthStateChanged(auth, async (user) => {
+//     if (user) {
+//         const userDoc = await getDoc(doc(db, "users", user.uid));
+//         if (userDoc.exists()) {
+//             const userData = userDoc.data();
+//             userDisplay.innerText = `${userData.name} • ${userData.role.toUpperCase()}`;
+//             if (userData.role === 'donor') {
+//                 document.getElementById('donor-section').classList.remove('hidden');
+//                 loadDonorHistory(user.uid);
+//             } else {
+//                 document.getElementById('ngo-section').classList.remove('hidden');
+//                 loadAvailableFood();
+//                 loadNGOClaims(user.uid); 
+//             }
+//         }
+//     } else { 
+//         window.location.href = 'index.html'; 
+//     }
+// });
 
-// ==========================================
-// 2. PHOTO PREVIEW LOGIC
-// ==========================================
-document.getElementById('food-photo').addEventListener('change', function(e) {
-    const file = e.target.files[0];
-    if (!file) return;
+// // ==========================================
+// // 2. PHOTO PREVIEW LOGIC
+// // ==========================================
+// document.getElementById('food-photo').addEventListener('change', function(e) {
+//     const file = e.target.files[0];
+//     if (!file) return;
 
-    if (!file.type.startsWith("image/")) {
-        alert("Only image files allowed!");
-        e.target.value = "";
-        return;
-    }
+//     if (!file.type.startsWith("image/")) {
+//         alert("Only image files allowed!");
+//         e.target.value = "";
+//         return;
+//     }
 
-    const reader = new FileReader();
-    reader.onload = function(e) {
-        const preview = document.getElementById('photo-preview');
-        preview.src = e.target.result;
-        preview.style.display = 'block';
-    };
-    reader.readAsDataURL(file);
-});
+//     const reader = new FileReader();
+//     reader.onload = function(e) {
+//         const preview = document.getElementById('photo-preview');
+//         preview.src = e.target.result;
+//         preview.style.display = 'block';
+//     };
+//     reader.readAsDataURL(file);
+// });
 // document.getElementById('food-photo').addEventListener('change', function(e) {
 //     const file = e.target.files[0];
 //     if (file) {
