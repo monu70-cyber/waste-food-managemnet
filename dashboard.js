@@ -3339,6 +3339,7 @@ document.getElementById('donation-form').onsubmit = async (e) => {
         const foodData = {
             foodType: document.getElementById('food-type').value,
             quantity: document.getElementById('quantity').value + ' ' + document.getElementById('quantity-unit').value,
+            contact: document.getElementById('contact-number').value,    
             shelfLifeHours: hoursValid,
             expiryTime: expiryTimestamp, 
             address: document.getElementById('address').value,
@@ -3452,6 +3453,8 @@ function renderFeed(donations) {
     
     if(donations.length === 0) {
         feed.innerHTML = `<p style="color: var(--text-muted); grid-column: 1/-1;">No donations match your search criteria.</p>`;
+            
+<div class="card-detail"><strong>Contact:</strong> <span>${item.contact || 'N/A'}</span></div>
         return;
     }
     
@@ -3589,7 +3592,8 @@ function loadNGOClaims(uid) {
                     <h4 class="card-title">You are picking up: ${item.foodType}</h4>
                     <div class="card-detail"><strong>From:</strong> <span>${item.address}</span></div>
                     <div class="card-detail"><strong>Donor:</strong> <span>${item.donorName}</span></div>
-                    
+                
+      <div class="card-detail"><strong>Contact:</strong> <span>${item.contact || 'N/A'}</span></div>
                     <a href="${mapUrl}" target="_blank" style="margin-top: 15px; text-align: center; background-color: var(--secondary); color: white; padding: 0.75rem; border-radius: var(--radius-md); text-decoration: none; font-weight: bold; display: block; transition: 0.2s;">📍 Navigate to Location</a>
                     
                     <button onclick="completeDonation('${docSnap.id}')" style="margin-top: 10px; width: 100%; background-color: var(--success); color: white;">✅ Mark as Completed</button>
@@ -3702,6 +3706,8 @@ function loadDonorHistory(uid) {
 
         if(snapshot.empty) {
             history.innerHTML = `<p style="color: var(--text-muted); grid-column: 1/-1;">You haven't posted any donations yet.</p>`;
+                
+<div class="card-detail"><strong>Contact:</strong> <span>${item.contact || 'N/A'}</span></div>
             return;
         }
 
