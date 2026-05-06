@@ -3947,16 +3947,16 @@
 // //         } else { markersProcessed++; }
 // //     });
 // // }
-import { auth, db } from './firebase.js'; 
+import { auth, db, storage } from './firebase.js'; 
 import { onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-auth.js";
 import { 
     collection, addDoc, query, where, onSnapshot, doc, getDoc, updateDoc, serverTimestamp, deleteDoc 
 } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-firestore.js";
+// import { ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.8.0/firebase-storage.js";
 
 const userDisplay = document.getElementById('user-display');
-
 // ==========================================
-// 🔥 MAP PLACES SEARCH BOX
+// 🔥 NEW: MAP SEARCH BOX FIX (ADDED)
 // ==========================================
 let searchBox;
 function initSearchBox() {
@@ -3984,6 +3984,7 @@ function initSearchBox() {
     });
 }
 window.addEventListener("load", initSearchBox);
+
 
 // ==========================================
 // 1. AUTH STATE & ROUTING
@@ -4044,15 +4045,18 @@ document.getElementById('donation-form').onsubmit = async (e) => {
     const hoursValid = parseInt(document.getElementById('shelf-life').value);
     const expiryTimestamp = Date.now() + (hoursValid * 60 * 60 * 1000);
 
+    // ⚠️ PASTE YOUR CLOUDINARY DETAILS HERE ⚠️
     const cloudName = "duj9ummoo"; 
     const uploadPreset = "fooddonation_preset"; 
 
     try {
+        // --- CLOUDINARY UPLOAD LOGIC ---
         if (file) {
             const formData = new FormData();
             formData.append('file', file);
             formData.append('upload_preset', uploadPreset);
 
+            // Send the image directly to Cloudinary's API
             const cloudinaryResponse = await fetch(`https://api.cloudinary.com/v1_1/${cloudName}/image/upload`, {
                 method: 'POST',
                 body: formData
@@ -4063,25 +4067,28 @@ document.getElementById('donation-form').onsubmit = async (e) => {
             }
 
             const cloudinaryData = await cloudinaryResponse.json();
+            // Grab the secure HTTPS link provided by Cloudinary
             photoURL = cloudinaryData.secure_url; 
         }
 
+        // --- FIREBASE DATABASE LOGIC ---
         submitBtn.innerText = "Saving to Database...";
 
         const foodData = {
             foodType: document.getElementById('food-type').value,
             quantity: document.getElementById('quantity').value + ' ' + document.getElementById('quantity-unit').value,
-            contact: document.getElementById('contact-number').value,    
+            contact: document.getElementById('contact-number').value, // <--- CONTACT NUMBER EXTRACTED HERE
             shelfLifeHours: hoursValid,
             expiryTime: expiryTimestamp, 
             address: document.getElementById('address').value,
-            image: photoURL, 
+            image: photoURL, // This is now the Cloudinary URL!
             donorId: auth.currentUser.uid,
             donorName: userDisplay.innerText.split(' •')[0],
             status: 'available', 
             createdAt: serverTimestamp()
         };
 
+        // Save the details (with the new image link) to Firestore
         await addDoc(collection(db, "donations"), foodData);
         e.target.reset(); 
         document.getElementById('photo-preview').style.display = 'none';
@@ -4114,12 +4121,15 @@ function applyFiltersAndRender() {
     const searchTerm = document.getElementById('search-food').value.toLowerCase();
 
     const filteredData = allAvailableDonations.filter(item => {
-        return item.foodType.toLowerCase().includes(searchTerm) || 
-               item.address.toLowerCase().includes(searchTerm) || 
-               item.donorName.toLowerCase().includes(searchTerm);
+        const matchesSearch = item.foodType.toLowerCase().includes(searchTerm) || 
+                              item.address.toLowerCase().includes(searchTerm) || 
+                              item.donorName.toLowerCase().includes(searchTerm);
+        return matchesSearch;
     });
 
     renderFeed(filteredData);
+    
+    // We now pass the searchTerm to the map engine!
     updateMapMarkers(filteredData, searchTerm); 
 }
 
@@ -4127,6 +4137,7 @@ function renderFeed(donations) {
     const feed = document.getElementById('available-feed');
     feed.innerHTML = '';
     
+    // FIXED SYNTAX ERROR HERE
     if(donations.length === 0) {
         feed.innerHTML = `<p style="color: var(--text-muted); grid-column: 1/-1;">No donations match your search criteria.</p>`;
         return;
@@ -4151,7 +4162,7 @@ function renderFeed(donations) {
                 <div class="card-detail"><strong>Quantity:</strong> <span>${item.quantity}</span></div>
                 <div class="card-detail"><strong>Status:</strong> ${expiryAlert}</div>
                 <div class="card-detail"><strong>Location:</strong> <span>${item.address}</span></div>
-                <div class="card-detail"><strong>Contact:</strong> <span>${item.contact || 'N/A'}</span></div>
+                <div class="card-detail"><strong>Contact:</strong> <span>${item.contact || 'N/A'}</span></div> <!-- FIXED SYNTAX ERROR HERE -->
                 <div class="card-detail" style="margin-bottom: 0.5rem;"><strong>Donor:</strong> <span>${item.donorName}</span></div>
                 
                 ${hoursLeft > 0 ? `<button onclick="claimFood('${item.id}')" style="margin-top: auto;">Claim for Pickup</button>` : `<button disabled style="margin-top: auto;">Food Expired</button>`}
@@ -4202,9 +4213,8 @@ function loadNGOClaims(uid) {
                 <div class="data-card" style="border: 2px solid var(--primary);">
                     <h4 class="card-title">You are picking up: ${item.foodType}</h4>
                     <div class="card-detail"><strong>From:</strong> <span>${item.address}</span></div>
-                    <div class="card-detail"><strong>Contact:</strong> <span>${item.contact || 'N/A'}</span></div>
                     <div class="card-detail"><strong>Donor:</strong> <span>${item.donorName}</span></div>
-                    
+                    <div class="card-detail"><strong>Contact:</strong> <span>${item.contact || 'N/A'}</span></div> <!-- ALREADY CORRECT HERE -->
                     <a href="${mapUrl}" target="_blank" style="margin-top: 15px; text-align: center; background-color: var(--secondary); color: white; padding: 0.75rem; border-radius: var(--radius-md); text-decoration: none; font-weight: bold; display: block; transition: 0.2s;">📍 Navigate to Location</a>
                     
                     <button onclick="completeDonation('${docSnap.id}')" style="margin-top: 10px; width: 100%; background-color: var(--success); color: white;">✅ Mark as Completed</button>
@@ -4228,9 +4238,13 @@ function loadDonorHistory(uid) {
         let nextTier = 5;
         
         if (totalDonations >= 15) { 
-            badge = '🏆 Gold Donor'; badgeColor = '#f1c40f'; nextTier = totalDonations; 
+            badge = '🏆 Gold Donor'; 
+            badgeColor = '#f1c40f'; 
+            nextTier = totalDonations; 
         } else if (totalDonations >= 5) { 
-            badge = '🥈 Silver Donor'; badgeColor = '#94A3B8'; nextTier = 15; 
+            badge = '🥈 Silver Donor'; 
+            badgeColor = '#94A3B8'; 
+            nextTier = 15; 
         }
 
         const progressPercent = Math.min((totalDonations / nextTier) * 100, 100);
@@ -4245,6 +4259,7 @@ function loadDonorHistory(uid) {
             </div>
         `;
 
+        // FIXED SYNTAX ERROR HERE
         if(snapshot.empty) {
             history.innerHTML = `<p style="color: var(--text-muted); grid-column: 1/-1;">You haven't posted any donations yet.</p>`;
             return;
@@ -4253,6 +4268,7 @@ function loadDonorHistory(uid) {
         snapshot.forEach((docSnap) => {
             const item = docSnap.data();
             
+            // NEW: Check if the food is expired
             const hoursLeft = (item.expiryTime - Date.now()) / (1000 * 60 * 60);
             const isExpired = hoursLeft <= 0 && item.status === 'available';
 
@@ -4265,6 +4281,7 @@ function loadDonorHistory(uid) {
             } else if (item.status === 'completed') { 
                 statusText = 'Completed'; badgeClass = 'badge-completed'; 
             } else if (isExpired) {
+                // Change UI to red if it is expired
                 statusText = 'Expired'; 
                 badgeClass = ''; 
                 expiredStyles = 'background: rgba(239, 68, 68, 0.1); color: var(--danger); border: 1px solid var(--danger);';
@@ -4273,8 +4290,10 @@ function loadDonorHistory(uid) {
             let actionButtons = '';
             if (item.status === 'available') {
                 if (isExpired) {
+                    // Show a bold delete button for expired food
                     actionButtons = `<button onclick="deleteDonorItem('${docSnap.id}')" style="margin-top: 10px; background: var(--danger); background-image: none; box-shadow: 0 4px 15px rgba(239,68,68,0.3);">🗑️ Delete Expired Food</button>`;
                 } else {
+                    // Standard cancel button for active food
                     actionButtons = `<button onclick="deleteDonorItem('${docSnap.id}')" style="margin-top: 10px; background: transparent; color: var(--danger); border: 1px solid var(--danger); background-image: none;">Cancel Listing</button>`;
                 }
             }
@@ -4286,7 +4305,7 @@ function loadDonorHistory(uid) {
                     <h4 class="card-title">${item.foodType}</h4>
                     <div class="card-detail"><strong>Quantity:</strong> <span>${item.quantity}</span></div>
                     <div class="card-detail"><strong>Location:</strong> <span>${item.address}</span></div>
-                    <div class="card-detail"><strong>Contact:</strong> <span>${item.contact || 'N/A'}</span></div>
+                    <div class="card-detail"><strong>Contact:</strong> <span>${item.contact || 'N/A'}</span></div> <!-- FIXED SYNTAX ERROR HERE -->
                     ${item.status !== 'available' ? `<div class="card-detail" style="margin-top: 0.5rem; color: var(--primary);"><strong>Handled By:</strong> <span>${item.claimedByName}</span></div>` : ''}
                     ${actionButtons}
                 </div>`;
@@ -4314,6 +4333,7 @@ document.getElementById('logout-btn').addEventListener('click', async () => {
 let map;
 let mapMarkers = [];
 
+// NEW: Added searchTerm parameter
 function updateMapMarkers(donations, searchTerm = "") {
     if (typeof google === 'undefined') {
         setTimeout(() => updateMapMarkers(donations, searchTerm), 500);
@@ -4339,18 +4359,24 @@ function updateMapMarkers(donations, searchTerm = "") {
 
     const activeDonations = donations.filter(item => (item.expiryTime - Date.now()) > 0);
 
+    // ==========================================
+    // THE FIX: If no food exists, try to zoom to the typed text anyway!
+    // ==========================================
     if (activeDonations.length === 0) {
         if (searchTerm.trim() !== "") {
+            // User typed something, but there is no food. Let's find the location anyway.
             geocoder.geocode({ address: searchTerm + ", Lucknow, Uttar Pradesh, India" }, (results, status) => {
                 if (status === "OK" && results[0]) {
                     map.setCenter(results[0].geometry.location);
-                    map.setZoom(14); 
+                    map.setZoom(14); // Zoom into the empty neighborhood
                 } else {
+                    // Fallback if Google Maps doesn't recognize the word
                     map.setCenter({ lat: 26.8467, lng: 80.9462 }); 
                     map.setZoom(12);
                 }
             });
         } else {
+            // Search bar is empty, show default Lucknow
             map.setCenter({ lat: 26.8467, lng: 80.9462 }); 
             map.setZoom(12);
         }
