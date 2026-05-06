@@ -186,75 +186,105 @@ loadFood();
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Dashboard - FoodShare</title>
-    <link rel="stylesheet" href="style.css">
-    <style>
-        .nav { display: flex; justify-content: space-between; align-items: center; padding: 1rem 5%; background: var(--dark); color: white; }
-        .container { padding: 2rem 5%; }
-        .card { background: white; padding: 1.5rem; border-radius: 8px; box-shadow: 0 2px 10px rgba(0,0,0,0.05); margin-bottom: 1rem; border-left: 5px solid var(--primary); }
-        .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 1.5rem; }
-        .badge { padding: 4px 8px; border-radius: 4px; font-size: 0.8rem; font-weight: bold; text-transform: uppercase; }
-        .badge-available { background: #d4edda; color: #155724; }
-        .badge-claimed { background: #fff3cd; color: #856404; }
-        .logout-btn { background: var(--danger); width: auto; padding: 8px 15px; }
-        /* Admin specific stat styling */
-        .stat-card { text-align: center; border-left: 5px solid #3498db; }
-        .stat-number { font-size: 1.5rem; font-weight: bold; color: var(--dark); }
-    </style>
+    <title>Dashboard - Food Donation Platform</title>
+    <link rel="stylesheet" href="style.css?v=darkmode1">
 </head>
 <body>
-    <nav class="nav">
-        <h2 style="margin:0; color: white;">FoodShare</h2>
-        <div>
-            <span id="user-display">Loading...</span>
-            <button id="logout-btn" class="logout-btn">Logout</button>
+    <header class="navbar">
+        <h2>Food Donation Platform<span>.</span></h2>
+        <div class="nav-controls">
+            <div class="user-badge-wrapper"><span id="user-display">Loading...</span></div>
+            <button id="logout-btn" class="btn-logout">Logout</button>
         </div>
-    </nav>
+    </header>
 
-    <div class="container">
+    <main class="dashboard-main">
         
-        <div id="admin-section" class="hidden">
-            <h3>Admin System Overview</h3>
-            <div class="grid" style="margin-bottom: 2rem;">
-                <div class="card stat-card">
-                    <div class="stat-number" id="stat-total-donations">0</div>
-                    <p>Total Donations</p>
-                </div>
-                <div class="card stat-card">
-                    <div class="stat-number" id="stat-active-users">0</div>
-                    <p>Registered Users</p>
-                </div>
-            </div>
-
-            <h3>All Platform Donations (Master Log)</h3>
-            <div id="admin-master-feed" class="grid"></div>
-        </div>
-
+        <!-- ================= DONOR WORKSPACE ================= -->
         <div id="donor-section" class="hidden">
-            <h3>Post New Donation</h3>
-            <div class="card">
+            
+            <div id="donor-badge-display"></div>
+
+            <h3 class="section-header">Post a New Donation</h3>
+            <div class="post-donation-card">
                 <form id="donation-form">
-                    <div class="grid">
-                        <input type="text" id="food-type" placeholder="Food Item (e.g. Rice, Bread)" required>
-                        <input type="text" id="quantity" placeholder="Quantity (e.g. 5kg, 10 packets)" required>
-                        <input type="text" id="shelf-life" placeholder="Shelf Life (e.g. 4 hours, 1 day)" required>
-                        <input type="text" id="address" placeholder="Pickup Address" required>
-                        <input type="file" id="food-photo" accept="image/*">
+                    <div class="form-row" style="display: flex; flex-wrap: wrap; gap: 15px;">
+                        <div class="form-group" style="flex: 1; min-width: 250px;">
+                            <label>Food Item</label>
+                            <input type="text" id="food-type" placeholder="e.g., Rice & Curry" required>
+                        </div>
+                        <div class="form-group" style="flex: 1; min-width: 250px;">
+                            <label>Quantity</label>
+                            <div style="display: flex; gap: 10px;">
+                                <input type="number" id="quantity" placeholder="e.g., 10" required min="1" style="flex: 2;">
+                                <select id="quantity-unit" style="flex: 1; padding: 10px; border: 1px solid var(--border-light); border-radius: 6px; background-color: var(--bg-body); color: var(--text-main);">
+                                    <option value="kg">kg</option>
+                                    <option value="servings">Servings</option>
+                                    <option value="packets">Packets</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="form-group" style="flex: 1; min-width: 250px;">
+                            <label>Donor Contact Number</label>
+                            <input type="tel" id="contact-number" placeholder="e.g., 9876543210" required>
+                        </div>
                     </div>
-                    <button type="submit" style="margin-top:1rem;">List Food Item</button>
+                    <div class="form-row" style="display: flex; flex-wrap: wrap; gap: 15px; margin-top: 15px;">
+                        <div class="form-group" style="flex: 1; min-width: 250px;">
+                            <label>Safe to consume for (Hours)</label>
+                            <input type="number" id="shelf-life" placeholder="e.g., 4" required min="1">
+                        </div>
+                        <div class="form-group" style="flex: 1; min-width: 250px;">
+                            <label>Pickup Location (in Lucknow)</label>
+                            <input type="text" id="address" placeholder="e.g., Gomti Nagar" required>
+                        </div>
+                        <div class="form-group" style="flex: 1; min-width: 250px;">
+                            <label>Upload Food Photo</label>
+                            <input type="file" id="food-photo" accept="image/*" required>
+                            <img id="photo-preview" style="max-width: 100%; height: 150px; display: none; object-fit: cover; border-radius: 8px; margin-top: 10px; border: 2px dashed var(--border-light);">
+                        </div>
+                    </div>
+                    <button type="submit" style="margin-top: 1.5rem;">List Food Item</button>
                 </form>
             </div>
-            <h3>My Previous Donations</h3>
-            <div id="donor-history" class="grid"></div>
+
+            <h3 class="section-header">My Donation Tracking</h3>
+            <div id="donor-history" class="dashboard-grid">
+                <!-- Donor history will load here -->
+            </div>
         </div>
 
+        <!-- ================= NGO WORKSPACE ================= -->
         <div id="ngo-section" class="hidden">
-            <h3>Available Food in Your Area</h3>
-            <div id="available-feed" class="grid"></div>
-        </div>
-    </div>
+            
+            <h3 class="section-header" id="my-claims-header" style="display:none; color: var(--primary);">Active Pickups (Needs Completion)</h3>
+            <div id="ngo-claims" class="dashboard-grid" style="margin-bottom: 30px;">
+                <!-- Claimed items to be marked as completed will go here -->
+            </div>
 
-    <script type="module" src="dashboard.js"></script>
+            <h3 class="section-header">Available Food in Lucknow</h3>
+            
+            <div style="display: flex; gap: 15px; margin-bottom: 20px; flex-wrap: wrap;">
+                <div style="flex: 2; min-width: 250px; position: relative;">
+                    <span style="position: absolute; left: 12px; top: 12px; color: #888;">🔍</span>
+                    <input type="text" id="search-food" placeholder="Search food or area (e.g., Rice, Gomti Nagar)..." style="width: 100%; padding: 10px 10px 10px 35px; border: 1px solid var(--border-light); border-radius: 6px; box-sizing: border-box; font-size: 14px; background-color: var(--bg-body); color: var(--text-main);">
+                </div>
+            </div>
+
+            <!-- Map Container required by JS -->
+            <div id="map" style="width: 100%; height: 400px; border-radius: 8px; margin-bottom: 20px; background: #e5e5e5; display: flex; align-items: center; justify-content: center; color: #888;">
+                Map will load here...
+            </div>
+
+            <div id="available-feed" class="dashboard-grid">
+                <!-- NGO feed will load here -->
+            </div>
+        </div>
+
+    </main>
+    
+    <div id="toast-container"></div>
+    <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyDzkYh8_wqFB4F0mCoKvTouAkyMrysL_Yc&libraries=places"></script>
+    <script type="module" src="dashboard.js" defer></script>
 </body>
 </html>
-
